@@ -1,12 +1,9 @@
 import math
 import random
 
-from PIL import Image
 import blobfile as bf
-from mpi4py import MPI
-import numpy as np
+# from mpi4py import MPI
 from torch.utils.data import DataLoader, Dataset
-import torch
 import torchaudio
 
 def load_info(path: str) -> dict:
@@ -39,8 +36,6 @@ def load_data(
     transformation,
     class_cond=False,
     deterministic=False,
-    random_crop=False,
-    random_flip=True,
     device
 ):
     """
@@ -78,8 +73,8 @@ def load_data(
         target_sample_rate,
         transformation,
         classes=classes,
-        shard=MPI.COMM_WORLD.Get_rank(),
-        num_shards=MPI.COMM_WORLD.Get_size(),
+        # shard=MPI.COMM_WORLD.Get_rank(),
+        # num_shards=MPI.COMM_WORLD.Get_size(),
         device=device
     )
     if deterministic:
