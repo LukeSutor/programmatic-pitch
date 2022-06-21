@@ -5,6 +5,8 @@ import blobfile as bf
 # from mpi4py import MPI
 from torch.utils.data import DataLoader, Dataset
 import torchaudio
+import numpy as np
+import soundfile as sf
 
 def load_info(path: str) -> dict:
     """Load audio metadata
@@ -72,9 +74,6 @@ def load_data(
         all_files,
         target_sample_rate,
         transformation,
-        classes=classes,
-        # shard=MPI.COMM_WORLD.Get_rank(),
-        # num_shards=MPI.COMM_WORLD.Get_size(),
         device=device
     )
     if deterministic:
@@ -104,22 +103,18 @@ def _list_wav_files_recursively(data_dir):
 class AudioDataset(Dataset):
     def __init__(
         self,
-        audio_length,
         image_paths,
         target_sample_rate,
+        target_samples,
         transformation,
-        classes=None,
-        shard=0,
-        num_shards=1,
         device="cpu"
     ):
         super().__init__()
-        self.local_images = image_paths[shard:][::num_shards]
-        self.local_classes = None if classes is None else classes[shard:][::num_shards]
-        self.audio_length = audio_length
+        self.local_images = image_paths
         self.device = device
         self.transformation = transformation.to(self.device)
         self.target_sample_rate = target_sample_rate
+        self.target_samples = target_samples
         
 
     def __len__(self):
@@ -132,7 +127,7 @@ class AudioDataset(Dataset):
         # Get a random sequence from the data of length sr * audio_length
         audio_data = load_info(path)
         duration = audio_data["samples"]
-        sample_length = audio_data["samplerate"] * self.audio_length
+        sample_length = math.floor(512 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
@@ -152,3 +147,36 @@ class AudioDataset(Dataset):
                 sr, self.target_sample_rate).to(self.device)
             signal = resampler(signal)
         return signal
+
+
+if __name__ == "__main__":
+
+    SAMPLE_RATE = 16000
+    TARGET_SAMPLES = 1024
+
+    all_files = _list_wav_files_recursively('../dataset/youtube_clips')
+
+    mel_spectrogram = torchaudio.transforms.MelSpectrogram(
+        sample_rate=SAMPLE_RATE,
+        n_fft=1024,
+        hop_length=512,
+        n_mels=128
+    )
+
+
+    dataset = AudioDataset(
+        all_files,
+        SAMPLE_RATE,
+        TARGET_SAMPLES,
+        mel_spectrogram,
+        device="cuda"
+    )
+
+
+    print(dataset[0].shape)
+    # torch.Size([2, 128, 1024])
+
+    # data = np.array(dataset[2])
+
+
+    # sf.write("16kHz.wav", data[0], SAMPLE_RATE)

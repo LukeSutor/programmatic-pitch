@@ -15,6 +15,10 @@ from torch.optim import Adam
 from torchvision import transforms, utils
 from PIL import Image
 
+import blobfile as bf
+import torchaudio
+import random
+
 from tqdm import tqdm
 from einops import rearrange, reduce
 from einops.layers.torch import Rearrange
@@ -253,7 +257,7 @@ class Unet(nn.Module):
         self.channels = channels
 
         init_dim = default(init_dim, dim)
-        self.init_conv = nn.Conv2d(channels, init_dim, 7, padding = 3)
+        self.init_conv = nn.Conv2d(self.channels, init_dim, 7, padding = 3)
 
         dims = [init_dim, *map(lambda m: dim * m, dim_mults)]
         in_out = list(zip(dims[:-1], dims[1:]))
@@ -337,7 +341,10 @@ class Unet(nn.Module):
         x = self.mid_block2(x, t)
 
         for block1, block2, attn, upsample in self.ups:
-            x = torch.cat((x, h.pop()), dim = 1)
+            test = h.pop()
+            print(x.shape)
+            print(test.shape)
+            x = torch.cat((x, test), dim = 1)
             x = block1(x, t)
             x = block2(x, t)
             x = attn(x)
@@ -379,7 +386,9 @@ class GaussianDiffusion(nn.Module):
         denoise_fn,
         *,
         image_size,
-        channels = 3,
+        n_mels,
+        n_samples,
+        channels = 2,
         timesteps = 1000,
         loss_type = 'l1',
         objective = 'pred_noise',
@@ -558,35 +567,92 @@ class GaussianDiffusion(nn.Module):
 
     def forward(self, img, *args, **kwargs):
         b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
-        assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
+        # assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
         t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
         img = normalize_to_neg_one_to_one(img)
         return self.p_losses(img, t, *args, **kwargs)
 
 # dataset classes
+def _list_wav_files_recursively(data_dir):
+    results = []
+    for entry in sorted(bf.listdir(data_dir)):
+        full_path = bf.join(data_dir, entry)
+        ext = entry.split(".")[-1]
+        if "." in entry and ext.lower() in ["wav"]:
+            results.append(full_path)
+        elif bf.isdir(full_path):
+            results.extend(_list_wav_files_recursively(full_path))
+    return results
+
+
+def load_info(path: str) -> dict:
+    """Load audio metadata
+    this is a backend_independent wrapper around torchaudio.info
+    Args:
+        path: Path of filename
+    Returns:
+        Dict: Metadata with
+        `samplerate`, `samples` and `duration` in seconds
+    """
+    # get length of file in samples
+    if torchaudio.get_audio_backend() == "sox":
+        raise RuntimeError("Deprecated backend is not supported")
+
+    info = {}
+    si = torchaudio.info(str(path))
+    info["samplerate"] = si.sample_rate
+    info["samples"] = si.num_frames
+    info["channels"] = si.num_channels
+    info["duration"] = info["samples"] / info["samplerate"]
+    return info
+
 
 class Dataset(data.Dataset):
-    def __init__(self, folder, image_size, exts = ['jpg', 'jpeg', 'png'], augment_horizontal_flip = False):
+    def __init__(
+        self,
+        image_paths,
+        target_sample_rate,
+        target_samples,
+        transformation,
+        device
+    ):
         super().__init__()
-        self.folder = folder
-        self.image_size = image_size
-        self.paths = [p for ext in exts for p in Path(f'{folder}').glob(f'**/*.{ext}')]
-
-        self.transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.RandomHorizontalFlip() if augment_horizontal_flip else nn.Identity(),
-            transforms.CenterCrop(image_size),
-            transforms.ToTensor()
-        ])
+        self.local_images = _list_wav_files_recursively(image_paths)
+        self.device = device
+        self.transformation = transformation.to(self.device)
+        self.target_sample_rate = target_sample_rate
+        self.target_samples = target_samples
 
     def __len__(self):
-        return len(self.paths)
+        return len(self.local_images)
 
-    def __getitem__(self, index):
-        path = self.paths[index]
-        img = Image.open(path)
-        return self.transform(img)
+    def __getitem__(self, idx):
+        path = self.local_images[idx]
+
+        # Get a random sequence from the data of length sr * audio_length
+        audio_data = load_info(path)
+        duration = audio_data["samples"]
+        sample_length = math.floor(512 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
+        start = random.randint(0, duration - sample_length)
+
+        signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
+        signal = signal.to(self.device)
+
+        # Resample to make all sample rates the same
+        signal = self._resample_if_necessary(signal, sr)
+
+        # Mel spectrogram transformation
+        signal = self.transformation(signal)
+        return signal
+
+    def _resample_if_necessary(self, signal, sr):
+        if sr != self.target_sample_rate:
+            resampler = torchaudio.transforms.Resample(
+                sr, self.target_sample_rate).to(self.device)
+            signal = resampler(signal)
+        return signal
+        
 
 # trainer class
 
@@ -624,7 +690,7 @@ class Trainer(object):
         self.gradient_accumulate_every = gradient_accumulate_every
         self.train_num_steps = train_num_steps
 
-        self.ds = Dataset(folder, self.image_size, augment_horizontal_flip = augment_horizontal_flip)
+        self.ds = Dataset(folder)
         self.dl = cycle(data.DataLoader(self.ds, batch_size = train_batch_size, shuffle = True, pin_memory = True, num_workers = cpu_count()))
         self.opt = Adam(diffusion_model.parameters(), lr = train_lr)
 
