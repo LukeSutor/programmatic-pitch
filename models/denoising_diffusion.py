@@ -12,8 +12,7 @@ from torch.cuda.amp import autocast, GradScaler
 
 from pathlib import Path
 from torch.optim import Adam
-from torchvision import transforms, utils
-from PIL import Image
+from torchvision import utils
 
 import blobfile as bf
 import torchaudio

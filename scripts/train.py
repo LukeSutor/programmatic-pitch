@@ -36,15 +36,15 @@ if __name__ == "__main__":
     summary(diffusion, input_size=(BATCH_SIZE, 2, 128, 1024))
 
 
-    # trainer = Trainer(
-    #     diffusion,
-    #     DATA_FOLDER,
-    #     SAMPLE_RATE,
-    #     TARGET_SAMPLES,
-    #     DEVICE,
-    #     train_batch_size = BATCH_SIZE,
-    #     gradient_accumulate_every = GRADIENT_ACCUMULATION,
-    #     save_and_sample_every = SAVE_SAMPLES_EVERY
-    # )
+    trainer = Trainer(
+        diffusion,
+        DATA_FOLDER,
+        SAMPLE_RATE,
+        TARGET_SAMPLES,
+        DEVICE,
+        train_batch_size = BATCH_SIZE,
+        gradient_accumulate_every = GRADIENT_ACCUMULATION,
+        save_and_sample_every = SAVE_SAMPLES_EVERY
+    )
 
-    # trainer.train()
+    trainer.train()
