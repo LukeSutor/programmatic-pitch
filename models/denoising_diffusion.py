@@ -342,8 +342,6 @@ class Unet(nn.Module):
 
         for block1, block2, attn, upsample in self.ups:
             test = h.pop()
-            print(x.shape)
-            print(test.shape)
             x = torch.cat((x, test), dim = 1)
             x = block1(x, t)
             x = block2(x, t)
@@ -359,6 +357,7 @@ class Unet(nn.Module):
 
 def extract(a, t, x_shape):
     b, *_ = t.shape
+    a = a.to("cuda" if torch.cuda.is_available() else "cpu")
     out = a.gather(-1, t)
     return out.reshape(b, *((1,) * (len(x_shape) - 1)))
 
@@ -620,7 +619,7 @@ class Dataset(data.Dataset):
         super().__init__()
         self.local_images = _list_wav_files_recursively(image_paths)
         self.device = device
-        self.transformation = transformation.to(self.device)
+        self.transformation = transformation.to("cpu")
         self.target_sample_rate = target_sample_rate
         self.target_samples = target_samples
 
@@ -637,7 +636,7 @@ class Dataset(data.Dataset):
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
-        signal = signal.to(self.device)
+        signal = signal.to("cpu")
 
         # Resample to make all sample rates the same
         signal = self._resample_if_necessary(signal, sr)
@@ -649,10 +648,10 @@ class Dataset(data.Dataset):
     def _resample_if_necessary(self, signal, sr):
         if sr != self.target_sample_rate:
             resampler = torchaudio.transforms.Resample(
-                sr, self.target_sample_rate).to(self.device)
+                sr, self.target_sample_rate).to("cpu")
             signal = resampler(signal)
         return signal
-        
+
 
 # trainer class
 
@@ -660,7 +659,10 @@ class Trainer(object):
     def __init__(
         self,
         diffusion_model,
-        folder,
+        image_paths,
+        target_sample_rate,
+        target_samples,
+        device,
         *,
         ema_decay = 0.995,
         train_batch_size = 32,
@@ -672,12 +674,11 @@ class Trainer(object):
         update_ema_every = 10,
         save_and_sample_every = 1000,
         results_folder = './results',
-        augment_horizontal_flip = True
     ):
         super().__init__()
-        self.image_size = diffusion_model.image_size
 
-        self.model = diffusion_model
+        self.device = device
+        self.model = diffusion_model.to(device)
         self.ema = EMA(ema_decay)
         self.ema_model = copy.deepcopy(self.model)
         self.update_ema_every = update_ema_every
@@ -686,11 +687,17 @@ class Trainer(object):
         self.save_and_sample_every = save_and_sample_every
 
         self.batch_size = train_batch_size
-        self.image_size = diffusion_model.image_size
         self.gradient_accumulate_every = gradient_accumulate_every
         self.train_num_steps = train_num_steps
 
-        self.ds = Dataset(folder)
+        self.mel_spectrogram = torchaudio.transforms.MelSpectrogram(
+            sample_rate=target_sample_rate,
+            n_fft=1024,
+            hop_length=512,
+            n_mels=128
+        )
+
+        self.ds = Dataset(image_paths, target_sample_rate, target_samples, self.mel_spectrogram, device="cuda" if torch.cuda.is_available() else "cpu")
         self.dl = cycle(data.DataLoader(self.ds, batch_size = train_batch_size, shuffle = True, pin_memory = True, num_workers = cpu_count()))
         self.opt = Adam(diffusion_model.parameters(), lr = train_lr)
 

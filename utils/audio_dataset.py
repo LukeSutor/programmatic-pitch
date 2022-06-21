@@ -112,7 +112,7 @@ class AudioDataset(Dataset):
         super().__init__()
         self.local_images = image_paths
         self.device = device
-        self.transformation = transformation.to(self.device)
+        self.transformation = transformation#.to(self.device)
         self.target_sample_rate = target_sample_rate
         self.target_samples = target_samples
         
@@ -131,7 +131,7 @@ class AudioDataset(Dataset):
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
-        signal = signal.to(self.device)
+        # signal = signal.to(self.device)
 
         # Resample to make all sample rates the same
         signal = self._resample_if_necessary(signal, sr)
@@ -144,7 +144,7 @@ class AudioDataset(Dataset):
     def _resample_if_necessary(self, signal, sr):
         if sr != self.target_sample_rate:
             resampler = torchaudio.transforms.Resample(
-                sr, self.target_sample_rate).to(self.device)
+                sr, self.target_sample_rate)#.to(self.device)
             signal = resampler(signal)
         return signal
 
