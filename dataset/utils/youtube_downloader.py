@@ -12,7 +12,7 @@ def download():
         }],
         'outtmpl': '../youtube_clips/%(title)s.%(ext)s',
         'playliststart': 1,
-        'playlistend': 10
+        'playlistend': 500
     }
 
     try:

@@ -8,10 +8,11 @@ from denoising_diffusion import Unet, GaussianDiffusion, Trainer
 # Constants
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DATA_FOLDER = '../dataset/youtube_clips'
-BATCH_SIZE = 4
+BATCH_SIZE = 1
 SAMPLE_RATE = 16000
 TARGET_SAMPLES = 1024
 GRADIENT_ACCUMULATION = 4
+TRAIN_STEPS = 400000
 SAVE_SAMPLES_EVERY = 10000
 
 if __name__ == "__main__":
@@ -43,6 +44,7 @@ if __name__ == "__main__":
         TARGET_SAMPLES,
         DEVICE,
         train_batch_size = BATCH_SIZE,
+        train_num_steps = TRAIN_STEPS,
         gradient_accumulate_every = GRADIENT_ACCUMULATION,
         save_and_sample_every = SAVE_SAMPLES_EVERY
     )
