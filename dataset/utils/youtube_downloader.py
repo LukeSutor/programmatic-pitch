@@ -1,9 +1,7 @@
-from __future__ import unicode_literals
 import youtube_dl
 
-URL = 'https://www.youtube.com/playlist?list=PLofht4PTcKYnaH8w5olJCI-wUVxuoMHqM'
 
-def download():
+def download(index, URL):
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -11,8 +9,8 @@ def download():
             'preferredcodec': 'wav',
         }],
         'outtmpl': '../youtube_clips/%(title)s.%(ext)s',
-        'playliststart': 1,
-        'playlistend': 500
+        'playliststart': index,
+        'playlistend': index + 4
     }
 
     try:
@@ -23,7 +21,13 @@ def download():
 
 
 if __name__ == "__main__":
-    download()
+    # Download the playlist in batches of five so that the script
+    # doesn't fail and stop downloading everything
+    for i in range(1, 990, 5):
+        download(i, 'https://www.youtube.com/playlist?list=PLofht4PTcKYnaH8w5olJCI-wUVxuoMHqM')
+
+    for i in range(1, 870, 5):
+        download(i, 'https://www.youtube.com/playlist?list=PLOzDu-MXXLliO9fBNZOQTBDddoA3FzZUo')
 
 
     print("fin.")

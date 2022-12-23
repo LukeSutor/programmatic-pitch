@@ -127,7 +127,7 @@ class AudioDataset(Dataset):
         # Get a random sequence from the data of length sr * audio_length
         audio_data = load_info(path)
         duration = audio_data["samples"]
-        sample_length = math.floor(512 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
+        sample_length = math.floor(256 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     SAMPLE_RATE = 16000
     TARGET_SAMPLES = 1024
 
-    all_files = _list_wav_files_recursively('../dataset/youtube_clips')
+    all_files = _list_wav_files_recursively('C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/data')
 
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     )
 
 
-    print(dataset[0].shape)
+    print(len(dataset))
     # torch.Size([2, 128, 1024])
 
     # data = np.array(dataset[2])

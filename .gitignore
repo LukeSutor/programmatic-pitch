@@ -6,3 +6,6 @@ __pycache__/
 *.wav
 *.pth
 data/
+
+chkpt/
+logs/

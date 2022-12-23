@@ -11,11 +11,12 @@ from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 import itertools
 import traceback
+from torchinfo import summary
 
-from writer import MyWriter
-from stft import TacotronSTFT
-from stft_loss import MultiResolutionSTFTLoss
-from dataloader import create_dataloader
+from .writer import MyWriter
+from .stft import TacotronSTFT
+from .stft_loss import MultiResolutionSTFTLoss
+from .dataloader import create_dataloader
 
 sys.path.insert(0, "C:/Users/Luke/Desktop/coding/diffusion_music_generation/")
 

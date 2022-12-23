@@ -1,0 +1,179 @@
+[33mcommit 3d8a0ba9c7d2233339ea96689a9d1224266dca14[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Luke Sutor <lukesutor@gmail.com>
+Date:   Fri Aug 12 19:21:06 2022 -0400
+
+    add univnet model
+
+[1mdiff --git a/dataset/utils/youtube_downloader.py b/dataset/utils/youtube_downloader.py[m
+[1mindex 97203c6..3db84c9 100644[m
+[1m--- a/dataset/utils/youtube_downloader.py[m
+[1m+++ b/dataset/utils/youtube_downloader.py[m
+[36m@@ -12,7 +12,7 @@[m [mdef download():[m
+         }],[m
+         'outtmpl': '../youtube_clips/%(title)s.%(ext)s',[m
+         'playliststart': 1,[m
+[31m-        'playlistend': 10[m
+[32m+[m[32m        'playlistend': 500[m
+     }[m
+ [m
+     try:[m
+[1mdiff --git a/models/denoising_diffusion.py b/models/diffusion/denoising_diffusion.py[m
+[1msimilarity index 100%[m
+[1mrename from models/denoising_diffusion.py[m
+[1mrename to models/diffusion/denoising_diffusion.py[m
+[1mdiff --git a/models/univnet/discriminator.py b/models/univnet/discriminator.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..9f50e5c[m
+[1m--- /dev/null[m
+[1m+++ b/models/univnet/discriminator.py[m
+[36m@@ -0,0 +1,31 @@[m
+[32m+[m[32mimport torch[m
+[32m+[m[32mimport torch.nn as nn[m
+[32m+[m
+[32m+[m[32mfrom .mpd import MultiPeriodDiscriminator[m
+[32m+[m[32mfrom .mrd import MultiResolutionDiscriminator[m
+[32m+[m[32mfrom omegaconf import OmegaConf[m
+[32m+[m
+[32m+[m[32mclass Discriminator(nn.Module):[m
+[32m+[m[32m    def __init__(self, hp):[m
+[32m+[m[32m        super(Discriminator, self).__init__()[m
+[32m+[m[32m        self.MRD = MultiResolutionDiscriminator(hp)[m
+[32m+[m[32m        self.MPD = MultiPeriodDiscriminator(hp)[m
+[32m+[m
+[32m+[m[32m    def forward(self, x):[m
+[32m+[m[32m        return self.MRD(x), self.MPD(x)[m
+[32m+[m
+[32m+[m[32mif __name__ == '__main__':[m
+[32m+[m[32m    hp = OmegaConf.load('../config/default.yaml')[m
+[32m+[m[32m    model = Discriminator(hp)[m
+[32m+[m
+[32m+[m[32m    x = torch.randn(3, 1, 16384)[m
+[32m+[m[32m    print(x.shape)[m
+[32m+[m
+[32m+[m[32m    mrd_output, mpd_output = model(x)[m
+[32m+[m[32m    for features, score in mpd_output:[m
+[32m+[m[32m        for feat in features:[m
+[32m+[m[32m            print(feat.shape)[m
+[32m+[m[32m        print(score.shape)[m
+[32m+[m
+[32m+[m[32m    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)[m
+[32m+[m[32m    print(pytorch_total_params)[m
+[1mdiff --git a/models/univnet/generator.py b/models/univnet/generator.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..bcaf85a[m
+[1m--- /dev/null[m
+[1m+++ b/models/univnet/generator.py[m
+[36m@@ -0,0 +1,110 @@[m
+[32m+[m[32mimport torch[m
+[32m+[m[32mimport torch.nn as nn[m
+[32m+[m[32mfrom omegaconf import OmegaConf[m
+[32m+[m
+[32m+[m[32mfrom .lvcnet import LVCBlock[m
+[32m+[m
+[32m+[m[32mMAX_WAV_VALUE = 32768.0[m
+[32m+[m
+[32m+[m[32mclass Generator(nn.Module):[m
+[32m+[m[32m    """UnivNet Generator"""[m
+[32m+[m[32m    def __init__(self, hp):[m
+[32m+[m[32m        super(Generator, self).__init__()[m
+[32m+[m[32m        self.mel_channel = hp.audio.n_mel_channels[m
+[32m+[m[32m        self.noise_dim = hp.gen.noise_dim[m
+[32m+[m[32m        self.hop_length = hp.audio.hop_length[m
+[32m+[m[32m        channel_size = hp.gen.channel_size[m
+[32m+[m[32m        kpnet_conv_size = hp.gen.kpnet_conv_size[m
+[32m+[m
+[32m+[m[32m        self.res_stack = nn.ModuleList()[m
+[32m+[m[32m        hop_length = 1[m
+[32m+[m[32m        for stride in hp.gen.strides:[m
+[32m+[m[32m            hop_length = stride * hop_length[m
+[32m+[m[32m            self.res_stack.append([m
+[32m+[m[32m                LVCBlock([m
+[32m+[m[32m                    channel_size,[m
+[32m+[m[32m                    hp.audio.n_mel_channels,[m
+[32m+[m[32m                    stride=stride,[m
+[32m+[m[32m                    dilations=hp.gen.dilations,[m
+[32m+[m[32m                    lReLU_slope=hp.gen.lReLU_slope,[m
+[32m+[m[32m                    cond_hop_length=hop_length,[m
+[32m+[m[32m                    kpnet_conv_size=kpnet_conv_size[m
+[32m+[m[32m                )[m
+[32m+[m[32m            )[m
+[32m+[m[41m        [m
+[32m+[m[32m        self.conv_pre = \[m
+[32m+[m[32m            nn.utils.weight_norm(nn.Conv1d(hp.gen.noise_dim, channel_size, 7, padding=3, padding_mode='reflect'))[m
+[32m+[m
+[32m+[m[32m        self.conv_post = nn.Sequential([m
+[32m+[m[32m            nn.LeakyReLU(hp.gen.lReLU_slope),[m
+[32m+[m[32m            nn.utils.weight_norm(nn.Conv1d(channel_size, 1, 7, padding=3, padding_mode='reflect')),[m
+[32m+[m[32m            nn.Tanh(),[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m    def forward(self, c, z):[m
+[32m+[m[32m        '''[m
+[32m+[m[32m        Args:[m[41m [m
+[32m+[m[32m            c (Tensor): the conditioning sequence of mel-spectrogram (batch, mel_channels, in_length)[m[41m [m
+[32m+[m[32m            z (Tensor): the noise sequence (batch, noise_dim, in_length)[m
+[32m+[m[41m        [m
+[32m+[m[32m        '''[m
+[32m+[m[32m        z = self.conv_pre(z)                # (B, c_g, L)[m
+[32m+[m
+[32m+[m[32m        for res_block in self.res_stack:[m
+[32m+[m[32m            res_block.to(z.device)[m
+[32m+[m[32m            z = res_block(z, c)             # (B, c_g, L * s_0 * ... * s_i)[m
+[32m+[m
+[32m+[m[32m        z = self.conv_post(z)               # (B, 1, L * 256)[m
+[32m+[m
+[32m+[m[32m        return z[m
+[32m+[m
+[32m+[m[32m    def eval(self, inference=False):[m
+[32m+[m[32m        super(Generator, self).eval()[m
+[32m+[m[32m        # don't remove weight norm while validation in training loop[m
+[32m+[m[32m        if inference:[m
+[32m+[m[32m            self.remove_weight_norm()[m
+[32m+[m
+[32m+[m[32m    def remove_weight_norm(self):[m
+[32m+[m[32m        print('Removing weight norm...')[m
+[32m+[m
+[32m+[m[32m        nn.utils.remove_weight_norm(self.conv_pre)[m
+[32m+[m
+[32m+[m[32m        for layer in self.conv_post:[m
+[32m+[m[32m            if len(layer.state_dict()) != 0:[m
+[32m+[m[32m                nn.utils.remove_weight_norm(layer)[m
+[32m+[m
+[32m+[m[32m        for res_block in self.res_stack:[m
+[32m+[m[32m            res_block.remove_weight_norm()[m
+[32m+[m
+[32m+[m[32m    def inference(self, c, z=None):[m
+[32m+[m[32m        # pad input mel with zeros to cut artifact[m
+[32m+[m[32m        # see https://github.com/seungwonpark/melgan/issues/8[m
+[32m+[m[32m        zero = torch.full((1, self.mel_channel, 10), -11.5129).to(c.device)[m
+[32m+[m[32m        mel = torch.cat((c, zero), dim=2)[m
+[32m+[m[41m        [m
+[32m+[m[32m        if z is None:[m
+[32m+[m[32m            z = torch.randn(1, self.noise_dim, mel.size(2)).to(mel.device)[m
+[32m+[m
+[32m+[m[32m        audio = self.forward(mel, z)[m
+[32m+[m[32m        audio = audio.squeeze() # collapse all dimension except time axis[m
+[32m+[m[32m        audio = audio[:-(self.hop_length*10)][m
+[32m+[m[32m        audio = MAX_WAV_VALUE * audio[m
+[32m+[m[32m        audio = audio.clamp(min=-MAX_WAV_VALUE, max=MAX_WAV_VALUE-1)[m
+[32m+[m[32m        audio = audio.short()[m
+[32m+[m
+[32m+[m[32m        return audio[m
+[32m+[m
+[32m+[m[32mif __name__ == '__main__':[m
+[32m+[m[32m    hp = OmegaConf.load('../config/default.yaml')[m
+[32m+[m[32m    model = Generator(hp)[m
+[32m+[m
+[32m+[m[32m    c = torch.randn(3, 100, 10)[m
+[32m+[m[32m    z = torch.randn(3, 64, 10)[m
+[32m+[m[32m    print(c.shape)[m
+[32m+[m
+[32m+[m[32m    y = model(c, z)[m
+[32m+[m[32m    print(y.shape)[m
+[32m+[m[32m    assert y.shape == torch.Size([3, 1, 2560])[m
+[32m+[m
+[32m+[m[32m    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)[m
+[32m+[m[32m    print(pytorch_total_params)[m
+\ No newline at end of file[m
+[1mdiff --git a/models/univnet/lvcnet.py b/models/univnet/lvcnet.py[m
+[1mnew file

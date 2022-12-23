@@ -2,12 +2,12 @@ import sys
 import torch
 from torchinfo import summary
 
-sys.path.insert(0, 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/models')
+sys.path.insert(0, 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/models/diffusion')
 from denoising_diffusion import Unet, GaussianDiffusion, Trainer
 
 # Constants
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-DATA_FOLDER = '../dataset/youtube_clips'
+DATA_FOLDER = '../dataset/data'
 BATCH_SIZE = 1
 SAMPLE_RATE = 16000
 TARGET_SAMPLES = 1024
@@ -18,7 +18,7 @@ SAVE_SAMPLES_EVERY = 10000
 if __name__ == "__main__":
 
     model = Unet(
-        dim = 256,
+        dim = 16, # 256
         dim_mults = (1, 2, 4, 8),
         channels = 2
     )
@@ -27,14 +27,14 @@ if __name__ == "__main__":
         denoise_fn = model,
         image_size = 128,
         n_mels = 128,
-        n_samples = 1024,
+        n_samples = 1024, # 1024
         channels = 2,
         timesteps = 1000,   # number of steps
         loss_type = 'l1'    # L1 or L2
 
     )
 
-    summary(diffusion, input_size=(BATCH_SIZE, 2, 128, 1024))
+    summary(diffusion, input_size=(BATCH_SIZE, 2, 128, 512))
 
 
     trainer = Trainer(

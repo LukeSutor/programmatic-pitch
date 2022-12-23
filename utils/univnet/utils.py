@@ -1,6 +1,7 @@
 import random
 import subprocess
 import numpy as np
+import torchaudio
 from scipy.io.wavfile import read
 
 
@@ -11,8 +12,12 @@ def get_commit_hash():
 def read_wav_np(path):
     sr, wav = read(path)
 
+    print(wav.shape)
+
     if len(wav.shape) == 2:
         wav = wav[:, 0]
+
+    print(wav[30000])
 
     if wav.dtype == np.int16:
         wav = wav / 32768.0

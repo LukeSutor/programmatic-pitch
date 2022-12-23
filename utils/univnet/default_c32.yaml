@@ -1,6 +1,6 @@
 data:
-  train_dir: '../dataset/data/' # root path of train data (either relative/absoulte path is ok)
-  val_dir: '../dataset/data/' # root path of validation data
+  train_dir: 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/utils/univnet/' # root path of train data (either relative/absoulte path is ok)
+  val_dir: 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/data/' # root path of validation data
 #############################
 train:
   num_workers: 8

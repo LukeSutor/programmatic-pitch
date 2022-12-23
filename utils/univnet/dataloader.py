@@ -8,10 +8,12 @@ import torchaudio
 import numpy as np
 import soundfile as sf
 
+from .stft import TacotronSTFT
+
 
 def create_dataloader(hp, args, train, device):
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=SAMPLE_RATE,
+        sample_rate=hp.audio.sampling_rate,
         n_fft=hp.audio.filter_length,
         hop_length=hp.audio.hop_length,
         n_mels=hp.audio.n_mel_channels,
@@ -21,12 +23,12 @@ def create_dataloader(hp, args, train, device):
     )
 
     if train:
-        dataset = AudioDataset(hp.data.train_dir, hp.audio.sampling_rate, hp.audio.target_samples, mel_spectrogram, device="cuda")
+        dataset = AudioDataset(hp, _list_wav_files_recursively(hp.data.train_dir), hp.audio.sampling_rate, hp.audio.target_samples, mel_spectrogram, device="cuda")
         return DataLoader(dataset=dataset, batch_size=hp.train.batch_size, shuffle=True,
                           num_workers=hp.train.num_workers, pin_memory=True, drop_last=True)
 
     else:
-        dataset = AudioDataset(hp.data.val_dir, hp.audio.sampling_rate, hp.audio.target_samples, mel_spectrogram, device="cuda")
+        dataset = AudioDataset(hp, _list_wav_files_recursively(hp.data.val_dir), hp.audio.sampling_rate, hp.audio.target_samples, mel_spectrogram, device="cuda")
         return DataLoader(dataset=dataset, batch_size=1, shuffle=False,
             num_workers=hp.train.num_workers, pin_memory=True, drop_last=False)
 
@@ -67,6 +69,7 @@ def _list_wav_files_recursively(data_dir):
 class AudioDataset(Dataset):
     def __init__(
         self,
+        hp,
         image_paths,
         target_sample_rate,
         target_samples,
@@ -79,6 +82,9 @@ class AudioDataset(Dataset):
         self.transformation = transformation#.to(self.device)
         self.target_sample_rate = target_sample_rate
         self.target_samples = target_samples
+        self.stft = TacotronSTFT(hp.audio.filter_length, hp.audio.hop_length, hp.audio.win_length,
+                            hp.audio.n_mel_channels, hp.audio.sampling_rate,
+                            hp.audio.mel_fmin, hp.audio.mel_fmax, center=False, device=device)
         
 
     def __len__(self):
@@ -91,7 +97,7 @@ class AudioDataset(Dataset):
         # Get a random sequence from the data of length sr * audio_length
         audio_data = load_info(path)
         duration = audio_data["samples"]
-        sample_length = math.floor(512 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
+        sample_length = math.floor(256 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
