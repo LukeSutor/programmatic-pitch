@@ -2,18 +2,10 @@ import sys
 import torch
 from torchinfo import summary
 
-sys.path.insert(0, 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/models/diffusion')
-from denoising_diffusion import Unet, GaussianDiffusion, Trainer
+sys.path.insert(0, '../')
+import constants
+from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, Trainer
 
-# Constants
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-DATA_FOLDER = '../dataset/data'
-BATCH_SIZE = 1
-SAMPLE_RATE = 16000
-TARGET_SAMPLES = 1024
-GRADIENT_ACCUMULATION = 4
-TRAIN_STEPS = 400000
-SAVE_SAMPLES_EVERY = 10000
 
 if __name__ == "__main__":
 
@@ -34,19 +26,19 @@ if __name__ == "__main__":
 
     )
 
-    summary(diffusion, input_size=(BATCH_SIZE, 2, 128, 512))
+    # summary(diffusion, input_size=(constants.BATCH_SIZE, 2, 128, 512))
 
 
     trainer = Trainer(
         diffusion,
-        DATA_FOLDER,
-        SAMPLE_RATE,
-        TARGET_SAMPLES,
-        DEVICE,
-        train_batch_size = BATCH_SIZE,
-        train_num_steps = TRAIN_STEPS,
-        gradient_accumulate_every = GRADIENT_ACCUMULATION,
-        save_and_sample_every = SAVE_SAMPLES_EVERY
+        constants.TRAIN_DATA,
+        constants.SAMPLE_RATE,
+        constants.TARGET_SAMPLES,
+        constants.DEVICE,
+        train_batch_size = constants.BATCH_SIZE,
+        train_num_steps = constants.TRAIN_STEPS,
+        gradient_accumulate_every = constants.GRADIENT_ACCUMULATION,
+        save_and_sample_every = constants.SAVE_SAMPLES_EVERY
     )
 
     trainer.train()

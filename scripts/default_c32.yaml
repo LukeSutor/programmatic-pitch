@@ -1,10 +1,10 @@
 data:
-  train_dir: 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/utils/univnet/' # root path of train data (either relative/absoulte path is ok)
-  val_dir: 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/data/' # root path of validation data
+  train_dir: 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/youtube_clips' # root path of train data (either relative/absoulte path is ok)
+  val_dir: 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/youtube_clips' # root path of validation data
 #############################
 train:
-  num_workers: 8
-  batch_size: 32
+  num_workers: 1
+  batch_size: 16
   optimizer: 'adam'
   seed: 1234
   adam:
