@@ -65,6 +65,7 @@ class KernelPredictor(torch.nn.Module):
         '''
         print(c.shape)
         batch, _, cond_length = c[0].shape
+
         c = self.input_conv(c)
         for residual_conv in self.residual_convs:
             residual_conv.to(c.device)

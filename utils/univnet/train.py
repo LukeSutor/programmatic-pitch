@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import logging
-import math
 import tqdm
 import torch
 import torch.nn as nn
@@ -10,7 +9,6 @@ import torch.nn.functional as F
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 import itertools
-import traceback
 from torchinfo import summary
 
 from .writer import MyWriter
@@ -27,14 +25,14 @@ from .utils import get_commit_hash
 from .validation import validate
 
 
-def train(rank, args, chkpt_path):
+def train(rank, num_gpus):
 
     with open('../constants.py', 'r') as f:
         hyperparams = ''.join(f.readlines())
 
-    if args.num_gpus > 1:
+    if num_gpus > 1:
         init_process_group(backend=constants.DIST_BACKEND, init_method=constants.DIST_URL,
-                           world_size=constants.WORLD_SIZE * args.num_gpus, rank=rank)
+                           world_size=constants.WORLD_SIZE * num_gpus, rank=rank)
 
     torch.cuda.manual_seed(constants.SEED)
     device = torch.device('cuda:{:d}'.format(rank))
@@ -54,8 +52,8 @@ def train(rank, args, chkpt_path):
 
     # define logger, writer, valloader, stft at rank_zero
     if rank == 0:
-        pt_dir = os.path.join(constants.CHECKPOINT_DIR, args.name)
-        log_dir = os.path.join(constants.LOG_DIR, args.name)
+        pt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME)
+        log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME)
         os.makedirs(pt_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
 
@@ -63,7 +61,7 @@ def train(rank, args, chkpt_path):
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(os.path.join(log_dir, '%s-%d.log' % (args.name, time.time()))),
+                logging.FileHandler(os.path.join(log_dir, '%s-%d.log' % (constants.RUN_NAME, time.time()))),
                 logging.StreamHandler()
             ]
         )
@@ -80,10 +78,10 @@ def train(rank, args, chkpt_path):
                             center=False,
                             device=device)
 
-    if chkpt_path is not None:
+    if constants.CHECKPOINT_PATH is not None:
         if rank == 0:
-            logger.info("Resuming from checkpoint: %s" % chkpt_path)
-        checkpoint = torch.load(chkpt_path)
+            logger.info("Resuming from checkpoint: %s" % constants.CHECKPOINT_PATH)
+        checkpoint = torch.load(constants.CHECKPOINT_PATH)
         model_g.load_state_dict(checkpoint['model_g'])
         model_d.load_state_dict(checkpoint['model_d'])
         optim_g.load_state_dict(checkpoint['optim_g'])
@@ -103,7 +101,7 @@ def train(rank, args, chkpt_path):
         if rank == 0:
             logger.info("Starting new training run.")
 
-    if args.num_gpus > 1:
+    if num_gpus > 1:
         model_g = DistributedDataParallel(model_g, device_ids=[rank]).to(device)
         model_d = DistributedDataParallel(model_d, device_ids=[rank]).to(device)
 
@@ -186,10 +184,10 @@ def train(rank, args, chkpt_path):
 
         if rank == 0 and epoch % constants.SAVE_INTERVAL == 0:
             save_path = os.path.join(pt_dir, '%s_%04d.pt'
-                                     % (args.name, epoch))
+                                     % (constants.RUN_NAME, epoch))
             torch.save({
-                'model_g': (model_g.module if args.num_gpus > 1 else model_g).state_dict(),
-                'model_d': (model_d.module if args.num_gpus > 1 else model_d).state_dict(),
+                'model_g': (model_g.module if num_gpus > 1 else model_g).state_dict(),
+                'model_d': (model_d.module if num_gpus > 1 else model_d).state_dict(),
                 'optim_g': optim_g.state_dict(),
                 'optim_d': optim_d.state_dict(),
                 'step': step,

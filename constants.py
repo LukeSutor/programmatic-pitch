@@ -1,6 +1,7 @@
 import torch
 
 ## General
+RUN_NAME = "Testing"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRAIN_DATA = '../dataset/youtube_clips'
 VALID_DATA = TRAIN_DATA
@@ -29,6 +30,7 @@ SAVE_SAMPLES_EVERY = 10000
 BATCH_SIZE = 16
 OPTIMIZER = 'adam'
 SEED = 2022
+CHECKPOINT_PATH = None
 # Adam
 LR = 0.0001
 BETA1 = 0.5
