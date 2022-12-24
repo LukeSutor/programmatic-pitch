@@ -1,16 +1,17 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import constants
 from torch.nn.utils import weight_norm, spectral_norm
 
 class DiscriminatorR(torch.nn.Module):
-    def __init__(self, hp, resolution):
+    def __init__(self, resolution):
         super(DiscriminatorR, self).__init__()
 
         self.resolution = resolution
-        self.LRELU_SLOPE = hp.mpd.lReLU_slope
+        self.LRELU_SLOPE = constants.MRD_LRELU_SLOPE
 
-        norm_f = weight_norm if hp.mrd.use_spectral_norm == False else spectral_norm
+        norm_f = weight_norm if constants.MRD_USE_SPECTRAL_NORM == False else spectral_norm
 
         self.convs = nn.ModuleList([
             norm_f(nn.Conv2d(1, 32, (3, 9), padding=(1, 4))),
@@ -47,11 +48,11 @@ class DiscriminatorR(torch.nn.Module):
 
 
 class MultiResolutionDiscriminator(torch.nn.Module):
-    def __init__(self, hp):
+    def __init__(self):
         super(MultiResolutionDiscriminator, self).__init__()
-        self.resolutions = eval(hp.mrd.resolutions)
+        self.resolutions = eval(constants.RESOLUTIONS)
         self.discriminators = nn.ModuleList(
-            [DiscriminatorR(hp, resolution) for resolution in self.resolutions]
+            [DiscriminatorR(resolution) for resolution in self.resolutions]
         )
 
     def forward(self, x):

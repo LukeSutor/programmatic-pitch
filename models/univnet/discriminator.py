@@ -1,22 +1,21 @@
 import torch
 import torch.nn as nn
+import constants
 
 from .mpd import MultiPeriodDiscriminator
 from .mrd import MultiResolutionDiscriminator
-from omegaconf import OmegaConf
 
 class Discriminator(nn.Module):
-    def __init__(self, hp):
+    def __init__(self):
         super(Discriminator, self).__init__()
-        self.MRD = MultiResolutionDiscriminator(hp)
-        self.MPD = MultiPeriodDiscriminator(hp)
+        self.MRD = MultiResolutionDiscriminator()
+        self.MPD = MultiPeriodDiscriminator()
 
     def forward(self, x):
         return self.MRD(x), self.MPD(x)
 
 if __name__ == '__main__':
-    hp = OmegaConf.load('../config/default.yaml')
-    model = Discriminator(hp)
+    model = Discriminator()
 
     x = torch.randn(3, 1, 16384)
     print(x.shape)

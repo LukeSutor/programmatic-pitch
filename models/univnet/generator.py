@@ -1,42 +1,44 @@
+import sys
 import torch
 import torch.nn as nn
-from omegaconf import OmegaConf
 
 from .lvcnet import LVCBlock
+
+import constants
 
 MAX_WAV_VALUE = 32768.0
 
 class Generator(nn.Module):
     """UnivNet Generator"""
-    def __init__(self, hp):
+    def __init__(self):
         super(Generator, self).__init__()
-        self.mel_channel = hp.audio.n_mel_channels
-        self.noise_dim = hp.gen.noise_dim
-        self.hop_length = hp.audio.hop_length
-        channel_size = hp.gen.channel_size
-        kpnet_conv_size = hp.gen.kpnet_conv_size
+        self.mel_channel = constants.NUM_CHANNELS
+        self.noise_dim = constants.NOISE_DIM
+        self.hop_length = constants.HOP_LENGTH
+        channel_size = constants.CHANNEL_SIZE
+        kpnet_conv_size = constants.KPNET_CONV_SIZE
 
         self.res_stack = nn.ModuleList()
         hop_length = 1
-        for stride in hp.gen.strides:
+        for stride in constants.STRIDES:
             hop_length = stride * hop_length
             self.res_stack.append(
                 LVCBlock(
                     channel_size,
-                    hp.audio.n_mel_channels,
+                    constants.NUM_CHANNELS,
                     stride=stride,
-                    dilations=hp.gen.dilations,
-                    lReLU_slope=hp.gen.lReLU_slope,
+                    dilations=constants.DILATIONS,
+                    lReLU_slope=constants.GEN_LRELU_SLOPE,
                     cond_hop_length=hop_length,
                     kpnet_conv_size=kpnet_conv_size
                 )
             )
         
         self.conv_pre = \
-            nn.utils.weight_norm(nn.Conv1d(hp.gen.noise_dim, channel_size, 7, padding=3, padding_mode='reflect'))
+            nn.utils.weight_norm(nn.Conv1d(constants.NOISE_DIM, channel_size, 7, padding=3, padding_mode='reflect'))
 
         self.conv_post = nn.Sequential(
-            nn.LeakyReLU(hp.gen.lReLU_slope),
+            nn.LeakyReLU(constants.GEN_LRELU_SLOPE),
             nn.utils.weight_norm(nn.Conv1d(channel_size, 1, 7, padding=3, padding_mode='reflect')),
             nn.Tanh(),
         )
@@ -95,8 +97,7 @@ class Generator(nn.Module):
         return audio
 
 if __name__ == '__main__':
-    hp = OmegaConf.load('../config/default.yaml')
-    model = Generator(hp)
+    model = Generator()
 
     c = torch.randn(3, 100, 10)
     z = torch.randn(3, 64, 10)

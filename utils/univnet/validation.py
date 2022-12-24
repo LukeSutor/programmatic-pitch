@@ -1,9 +1,10 @@
+import sys
 import tqdm
 import torch
 import torch.nn.functional as F
+import constants
 
-
-def validate(hp, args, generator, discriminator, valloader, stft, writer, step, device):
+def validate(generator, discriminator, valloader, stft, writer, step, device):
     generator.eval()
     discriminator.eval()
     torch.backends.cudnn.benchmark = False
@@ -13,7 +14,7 @@ def validate(hp, args, generator, discriminator, valloader, stft, writer, step, 
     for idx, (mel, audio) in enumerate(loader):
         mel = mel.to(device)
         audio = audio.to(device)
-        noise = torch.randn(1, hp.gen.noise_dim, mel.size(2)).to(device)
+        noise = torch.randn(1, constants.NOISE_DIM, mel.size(2)).to(device)
 
         fake_audio = generator(mel, noise)[:,:,:audio.size(2)]
 
@@ -22,7 +23,7 @@ def validate(hp, args, generator, discriminator, valloader, stft, writer, step, 
 
         mel_loss += F.l1_loss(mel_fake, mel_real).item()
 
-        if idx < hp.log.num_audio:
+        if idx < constants.NUM_AUDIO:
             spec_fake = stft.linear_spectrogram(fake_audio.squeeze(1))
             spec_real = stft.linear_spectrogram(audio.squeeze(1))
 

@@ -1,18 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import constants
 from torch.nn.utils import weight_norm, spectral_norm
 
 class DiscriminatorP(nn.Module):
-    def __init__(self, hp, period):
+    def __init__(self, period):
         super(DiscriminatorP, self).__init__()
 
-        self.LRELU_SLOPE = hp.mpd.lReLU_slope
+        self.LRELU_SLOPE = constants.MPD_LRELU_SLOPE
         self.period = period
 
-        kernel_size = hp.mpd.kernel_size
-        stride = hp.mpd.stride
-        norm_f = weight_norm if hp.mpd.use_spectral_norm == False else spectral_norm
+        kernel_size = constants.KERNEL_SIZE
+        stride = constants.STRIDE
+        norm_f = weight_norm if constants.MPD_USE_SPECTRAL_NORM == False else spectral_norm
 
         self.convs = nn.ModuleList([
             norm_f(nn.Conv2d(1, 64, (kernel_size, 1), (stride, 1), padding=(kernel_size // 2, 0))),
@@ -46,11 +47,11 @@ class DiscriminatorP(nn.Module):
 
 
 class MultiPeriodDiscriminator(nn.Module):
-    def __init__(self, hp):
+    def __init__(self):
         super(MultiPeriodDiscriminator, self).__init__()
 
         self.discriminators = nn.ModuleList(
-            [DiscriminatorP(hp, period) for period in hp.mpd.periods]
+            [DiscriminatorP(period) for period in constants.PERIODS]
         )
 
     def forward(self, x):

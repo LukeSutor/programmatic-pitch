@@ -8,28 +8,28 @@ from torch.utils.data import DataLoader, Dataset
 import torchaudio
 import numpy as np
 import soundfile as sf
+import constants
 
 
-def create_dataloader(hp, args, train, device):
+def create_dataloader(train, device):
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=hp.audio.sampling_rate,
-        n_fft=hp.audio.filter_length,
-        hop_length=hp.audio.hop_length,
-        n_mels=hp.audio.n_mel_channels,
-        win_length=hp.audio.win_length,
-        f_min=hp.audio.mel_fmin,
-        f_max=hp.audio.mel_fmax
+        sample_rate=constants.SAMPLE_RATE,
+        n_fft=constants.FILTER_LENGTH,
+        hop_length=constants.HOP_LENGTH,
+        n_mels=constants.NUM_CHANNELS,
+        win_length=constants.WIN_LENGTH,
+        f_min=constants.FMIN,
+        f_max=constants.FMAX
     )
 
     if train:
-        dataset = AudioDataset(_list_wav_files_recursively(hp.data.train_dir), hp.audio.sampling_rate, hp.audio.target_samples, mel_spectrogram, device="cuda")
-        return DataLoader(dataset=dataset, batch_size=hp.train.batch_size, shuffle=True,
-                          num_workers=hp.train.num_workers, pin_memory=True, drop_last=True)
-
+        dataset = AudioDataset(_list_wav_files_recursively(constants.TRAIN_DATA), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, mel_spectrogram, device="cuda")
+        return DataLoader(dataset=dataset, batch_size=constants.BATCH_SIZE, shuffle=True,
+                          num_workers=constants.NUM_WORKERS, pin_memory=True, drop_last=True)
     else:
-        dataset = AudioDataset(_list_wav_files_recursively(hp.data.val_dir), hp.audio.sampling_rate, hp.audio.target_samples, mel_spectrogram, device="cuda")
+        dataset = AudioDataset(_list_wav_files_recursively(constants.VALID_DATA), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, mel_spectrogram, device="cuda")
         return DataLoader(dataset=dataset, batch_size=1, shuffle=False,
-            num_workers=hp.train.num_workers, pin_memory=True, drop_last=False)
+            num_workers=constants.NUM_WORKERS, pin_memory=True, drop_last=False)
 
 
 def load_info(path: str) -> dict:
@@ -117,14 +117,10 @@ class AudioDataset(Dataset):
 
 
 if __name__ == "__main__":
-
-    SAMPLE_RATE = 16000
-    TARGET_SAMPLES = 1024
-
     all_files = _list_wav_files_recursively('../../dataset/youtube_clips')
 
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=SAMPLE_RATE,
+        sample_rate=constants.SAMPLE_RATE,
         n_fft=1024,
         hop_length=256,
         n_mels=128
@@ -133,8 +129,8 @@ if __name__ == "__main__":
 
     dataset = AudioDataset(
         all_files,
-        SAMPLE_RATE,
-        TARGET_SAMPLES,
+        constants.SAMPLE_RATE,
+        constants.TARGET_SAMPLES,
         mel_spectrogram,
         device="cuda"
     )

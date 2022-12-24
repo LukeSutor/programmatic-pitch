@@ -20,28 +20,32 @@ from .dataloader import create_dataloader
 
 sys.path.insert(0, "C:/Users/Luke/Desktop/coding/diffusion_music_generation/")
 
+import constants
 from models.univnet.generator import Generator
 from models.univnet.discriminator import Discriminator
 from .utils import get_commit_hash
 from .validation import validate
 
 
-def train(rank, args, chkpt_path, hp, hp_str):
+def train(rank, args, chkpt_path):
+
+    with open('../constants.py', 'r') as f:
+        hyperparams = ''.join(f.readlines())
 
     if args.num_gpus > 1:
-        init_process_group(backend=hp.dist_config.dist_backend, init_method=hp.dist_config.dist_url,
-                           world_size=hp.dist_config.world_size * args.num_gpus, rank=rank)
+        init_process_group(backend=constants.DIST_BACKEND, init_method=constants.DIST_URL,
+                           world_size=constants.WORLD_SIZE * args.num_gpus, rank=rank)
 
-    torch.cuda.manual_seed(hp.train.seed)
+    torch.cuda.manual_seed(constants.SEED)
     device = torch.device('cuda:{:d}'.format(rank))
 
-    model_g = Generator(hp).to(device)
-    model_d = Discriminator(hp).to(device)
+    model_g = Generator().to(device)
+    model_d = Discriminator().to(device)
 
     optim_g = torch.optim.AdamW(model_g.parameters(),
-        lr=hp.train.adam.lr, betas=(hp.train.adam.beta1, hp.train.adam.beta2))
+        lr=constants.LR, betas=(constants.BETA1, constants.BETA2))
     optim_d = torch.optim.AdamW(model_d.parameters(),
-        lr=hp.train.adam.lr, betas=(hp.train.adam.beta1, hp.train.adam.beta2))
+        lr=constants.LR, betas=(constants.BETA1, constants.BETA2))
 
     githash = get_commit_hash()
 
@@ -50,8 +54,8 @@ def train(rank, args, chkpt_path, hp, hp_str):
 
     # define logger, writer, valloader, stft at rank_zero
     if rank == 0:
-        pt_dir = os.path.join(hp.log.chkpt_dir, args.name)
-        log_dir = os.path.join(hp.log.log_dir, args.name)
+        pt_dir = os.path.join(constants.CHECKPOINT_DIR, args.name)
+        log_dir = os.path.join(constants.LOG_DIR, args.name)
         os.makedirs(pt_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
 
@@ -64,15 +68,15 @@ def train(rank, args, chkpt_path, hp, hp_str):
             ]
         )
         logger = logging.getLogger()
-        writer = MyWriter(hp, log_dir)
-        valloader = create_dataloader(hp, args, False, device='cpu')
-        stft = TacotronSTFT(filter_length=hp.audio.filter_length,
-                            hop_length=hp.audio.hop_length,
-                            win_length=hp.audio.win_length,
-                            n_mel_channels=hp.audio.n_mel_channels,
-                            sampling_rate=hp.audio.sampling_rate,
-                            mel_fmin=hp.audio.mel_fmin,
-                            mel_fmax=hp.audio.mel_fmax,
+        writer = MyWriter(log_dir)
+        valloader = create_dataloader(False, device='cpu')
+        stft = TacotronSTFT(filter_length=constants.FILTER_LENGTH,
+                            hop_length=constants.HOP_LENGTH,
+                            win_length=constants.WIN_LENGTH,
+                            n_mel_channels=constants.NUM_CHANNELS,
+                            sampling_rate=constants.SAMPLE_RATE,
+                            mel_fmin=constants.FMIN,
+                            mel_fmax=constants.FMAX,
                             center=False,
                             device=device)
 
@@ -88,8 +92,8 @@ def train(rank, args, chkpt_path, hp, hp_str):
         init_epoch = checkpoint['epoch']
 
         if rank == 0:
-            if hp_str != checkpoint['hp_str']:
-                logger.warning("New hparams is different from checkpoint. Will use new.")
+            if hyperparams != checkpoint['hyperparams']:
+                logger.warning("New hyperparams are different from checkpoint. Will use new.")
 
             if githash != checkpoint['githash']:
                 logger.warning("Code might be different: git hash is different.")
@@ -107,19 +111,19 @@ def train(rank, args, chkpt_path, hp, hp_str):
     # if not consistent, it'll horribly slow down.
     torch.backends.cudnn.benchmark = True
 
-    trainloader = create_dataloader(hp, args, True, device='cpu')
+    trainloader = create_dataloader(True, device='cpu')
 
     model_g.train()
     model_d.train()
 
-    resolutions = eval(hp.mrd.resolutions)
+    resolutions = eval(constants.RESOLUTIONS)
     stft_criterion = MultiResolutionSTFTLoss(device, resolutions)
 
     for epoch in itertools.count(init_epoch+1):
         
-        if rank == 0 and epoch % hp.log.validation_interval == 0:
+        if rank == 0 and epoch % constants.VALIDATION_INTERVAL == 0:
             with torch.no_grad():
-                validate(hp, args, model_g, model_d, valloader, stft, writer, step, device)
+                validate(model_g, model_d, valloader, stft, writer, step, device)
 
         trainloader.dataset.shuffle_mapping()
         if rank == 0:
@@ -131,7 +135,7 @@ def train(rank, args, chkpt_path, hp, hp_str):
 
             mel = mel.to(device)
             audio = audio.to(device)
-            noise = torch.randn(hp.train.batch_size, hp.gen.noise_dim, mel.size(2)).to(device)
+            noise = torch.randn(constants.BATCH_SIZE, constants.NOISE_DIM, mel.size(2)).to(device)
 
             # generator
             optim_g.zero_grad()
@@ -139,7 +143,7 @@ def train(rank, args, chkpt_path, hp, hp_str):
 
             # Multi-Resolution STFT Loss
             sc_loss, mag_loss = stft_criterion(fake_audio.squeeze(1), audio.squeeze(1))
-            stft_loss = (sc_loss + mag_loss) * hp.train.stft_lamb
+            stft_loss = (sc_loss + mag_loss) * constants.STFT_LAMB
 
             res_fake, period_fake = model_d(fake_audio)
 
@@ -176,11 +180,11 @@ def train(rank, args, chkpt_path, hp, hp_str):
             loss_g = loss_g.item()
             loss_d = loss_d.item()
 
-            if rank == 0 and step % hp.log.summary_interval == 0:
+            if rank == 0 and step % constants.SUMMARY_INTERVAL == 0:
                 writer.log_training(loss_g, loss_d, stft_loss.item(), score_loss.item(), step)
                 loader.set_description("g %.04f d %.04f | step %d" % (loss_g, loss_d, step))
 
-        if rank == 0 and epoch % hp.log.save_interval == 0:
+        if rank == 0 and epoch % constants.SAVE_INTERVAL == 0:
             save_path = os.path.join(pt_dir, '%s_%04d.pt'
                                      % (args.name, epoch))
             torch.save({
@@ -190,7 +194,7 @@ def train(rank, args, chkpt_path, hp, hp_str):
                 'optim_d': optim_d.state_dict(),
                 'step': step,
                 'epoch': epoch,
-                'hp_str': hp_str,
+                'hyperparams': hyperparams,
                 'githash': githash,
             }, save_path)
             logger.info("Saved checkpoint to: %s" % save_path)
