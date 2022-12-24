@@ -18,7 +18,7 @@ def validate(generator, discriminator, valloader, stft, writer, step, device):
         win_length=constants.WIN_LENGTH,
         f_min=constants.FMIN,
         f_max=constants.FMAX
-    )
+    ).to(constants.DEVICE)
 
     loader = tqdm.tqdm(valloader, desc='Validation loop')
     mel_loss = 0.0
@@ -29,11 +29,11 @@ def validate(generator, discriminator, valloader, stft, writer, step, device):
 
         fake_audio = generator(mel, noise)[:,:,:audio.size(2)]
 
-        # mel_fake = stft.mel_spectrogram(fake_audio.squeeze(1))
-        # mel_real = stft.mel_spectrogram(audio.squeeze(1))
+        mel_fake = stft.mel_spectrogram(fake_audio.squeeze(1))
+        mel_real = stft.mel_spectrogram(audio.squeeze(1))
 
-        mel_fake = mel_spectrogram(fake_audio.squeeze(1))
-        mel_real = mel_spectrogram(audio.squeeze(1))
+        # mel_fake = mel_spectrogram(fake_audio.squeeze(1))
+        # mel_real = mel_spectrogram(audio.squeeze(1))
 
         print("SHAPE:", mel_fake.shape)
 

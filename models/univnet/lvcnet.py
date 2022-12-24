@@ -64,7 +64,7 @@ class KernelPredictor(torch.nn.Module):
             c (Tensor): the conditioning sequence (batch, cond_channels, cond_length)
         '''
         print(c.shape)
-        batch, _, cond_length = c[0].shape
+        batch, _, cond_length = c.shape
 
         c = self.input_conv(c)
         for residual_conv in self.residual_convs:

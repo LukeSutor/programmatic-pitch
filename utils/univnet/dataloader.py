@@ -1,3 +1,4 @@
+import sys
 import math
 import random
 
@@ -8,7 +9,12 @@ from torch.utils.data import DataLoader, Dataset
 import torchaudio
 import numpy as np
 import soundfile as sf
+#TESTING
+sys.path.insert(0, "../../")
+# from utils import read_wav_np
 import constants
+
+# from stft import TacotronSTFT
 
 
 def create_dataloader(train, device):
@@ -101,10 +107,12 @@ class AudioDataset(Dataset):
         # Resample to make all sample rates the same
         signal = self._resample_if_necessary(signal, sr)
 
+        # Mix down the signal to mono
+        signal = self._mix_down_if_necessary(signal)
 
         # Mel spectrogram transformation
         spectrogram = self.transformation(signal)
-        return (spectrogram), signal
+        return spectrogram[0], signal
 
 
     def _resample_if_necessary(self, signal, sr):
@@ -114,6 +122,11 @@ class AudioDataset(Dataset):
             signal = resampler(signal)
         return signal
 
+    def _mix_down_if_necessary(self, signal):
+        if signal.shape[0] > 1:
+            signal = torch.mean(signal, dim=0, keepdim=True)
+        return signal
+
 
 
 if __name__ == "__main__":
@@ -121,10 +134,26 @@ if __name__ == "__main__":
 
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=constants.SAMPLE_RATE,
-        n_fft=1024,
-        hop_length=256,
-        n_mels=128
+        n_fft=constants.FILTER_LENGTH,
+        hop_length=constants.HOP_LENGTH,
+        n_mels=constants.NUM_CHANNELS,
+        win_length=constants.WIN_LENGTH,
+        f_min=constants.FMIN,
+        f_max=constants.FMAX
     )
+
+    # GET MEL
+    stft = TacotronSTFT(constants.FILTER_LENGTH, constants.HOP_LENGTH, constants.WIN_LENGTH,
+                        constants.NUM_CHANNELS, constants.SAMPLE_RATE,
+                        constants.FMIN, constants.FMAX, center=False, device="cpu")
+    wavpath = "../../dataset/youtube_clips/'NOBODY'.wav"
+    melpath = wavpath.replace('.wav', '.mel')
+    sr, wav = read_wav_np(wavpath)
+
+    wav = torch.from_numpy(wav).unsqueeze(0)
+    mel = stft.mel_spectrogram(wav)
+
+    mel = mel.squeeze(0)
 
 
     dataset = AudioDataset(
@@ -135,5 +164,5 @@ if __name__ == "__main__":
         device="cuda"
     )
 
-
-    print(dataset[0])
+    print("MINE:",dataset[0][0].shape)
+    print("THEIRS:",mel.shape)
