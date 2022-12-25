@@ -3,8 +3,8 @@ import torch
 ## General
 RUN_NAME = "Testing"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-TRAIN_DATA = '../dataset/data'
-VALID_DATA = TRAIN_DATA
+TRAIN_DATA = '../dataset/data/train'
+VALID_DATA = '../dataset/data/valid'
 NUM_WORKERS = 1
 
 ## Mel Transform
@@ -27,7 +27,7 @@ SAVE_SAMPLES_EVERY = 10000
 
 ## Univnet Specific
 # Training
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 OPTIMIZER = 'adam'
 SEED = 2022
 CHECKPOINT_PATH = None
@@ -38,7 +38,7 @@ BETA2 = 0.9
 STFT_LAMB = 2.5
 #Generator
 NOISE_DIM = 64
-CHANNEL_SIZE = 32
+CHANNEL_SIZE = 16
 DILATIONS = [1, 3, 9, 27]
 STRIDES = [8, 8, 4]
 GEN_LRELU_SLOPE = 0.2
@@ -59,8 +59,8 @@ DIST_URL = "tcp://localhost:54321"
 WORLD_SIZE = 1
 #Log
 SUMMARY_INTERVAL = 1
-VALIDATION_INTERVAL = 1
-SAVE_INTERVAL = 1
+VALIDATION_INTERVAL = 100
+SAVE_INTERVAL = 100
 NUM_AUDIO = 5
 CHECKPOINT_DIR = 'chkpt'
 LOG_DIR = 'logs'
