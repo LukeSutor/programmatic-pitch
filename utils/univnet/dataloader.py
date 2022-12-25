@@ -3,7 +3,6 @@ import math
 import random
 
 import blobfile as bf
-# from mpi4py import MPI
 import torch
 from torch.utils.data import DataLoader, Dataset
 import torchaudio
@@ -11,29 +10,17 @@ import numpy as np
 import soundfile as sf
 #TESTING
 sys.path.insert(0, "../../")
-# from utils import read_wav_np
 import constants
-
-# from stft import TacotronSTFT
+from .stft import TacotronSTFT
 
 
 def create_dataloader(train, device):
-    mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=constants.SAMPLE_RATE,
-        n_fft=constants.FILTER_LENGTH,
-        hop_length=constants.HOP_LENGTH,
-        n_mels=constants.NUM_CHANNELS,
-        win_length=constants.WIN_LENGTH,
-        f_min=constants.FMIN,
-        f_max=constants.FMAX
-    )
-
     if train:
-        dataset = AudioDataset(_list_wav_files_recursively(constants.TRAIN_DATA), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, mel_spectrogram, device="cuda")
+        dataset = AudioDataset(_list_wav_files_recursively(constants.TRAIN_DATA), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, device="cuda")
         return DataLoader(dataset=dataset, batch_size=constants.BATCH_SIZE, shuffle=True,
                           num_workers=constants.NUM_WORKERS, pin_memory=True, drop_last=True)
     else:
-        dataset = AudioDataset(_list_wav_files_recursively(constants.VALID_DATA), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, mel_spectrogram, device="cuda")
+        dataset = AudioDataset(_list_wav_files_recursively(constants.VALID_DATA), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, device="cuda")
         return DataLoader(dataset=dataset, batch_size=1, shuffle=False,
             num_workers=constants.NUM_WORKERS, pin_memory=True, drop_last=False)
 
@@ -77,15 +64,23 @@ class AudioDataset(Dataset):
         image_paths,
         target_sample_rate,
         target_samples,
-        transformation,
         device="cpu"
     ):
         super().__init__()
         self.local_images = image_paths
         self.device = device
-        self.transformation = transformation#.to(self.device)
+        # self.transformation = transformation#.to(self.device)
         self.target_sample_rate = target_sample_rate
         self.target_samples = target_samples
+        self.transformation = TacotronSTFT(filter_length=constants.FILTER_LENGTH,
+                                            hop_length=constants.HOP_LENGTH,
+                                            win_length=constants.WIN_LENGTH,
+                                            n_mel_channels=constants.NUM_CHANNELS,
+                                            sampling_rate=constants.SAMPLE_RATE,
+                                            mel_fmin=constants.FMIN,
+                                            mel_fmax=constants.FMAX,
+                                            center=False,
+                                            device="cpu")
         
 
     def __len__(self):
@@ -98,7 +93,7 @@ class AudioDataset(Dataset):
         # Get a random sequence from the data of length sr * audio_length
         audio_data = load_info(path)
         duration = audio_data["samples"]
-        sample_length = math.floor(256 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
+        sample_length = math.floor(256 * 1024 * audio_data["samplerate"] / self.target_sample_rate)
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
@@ -110,9 +105,12 @@ class AudioDataset(Dataset):
         # Mix down the signal to mono
         signal = self._mix_down_if_necessary(signal)
 
+        # Resampling and mixing down may cause floating point errors, so reclamp values
+        signal = signal.clamp(-1.0, 1.0)
+
         # Mel spectrogram transformation
-        spectrogram = self.transformation(signal)
-        return spectrogram[0], signal
+        spectrogram = self.transformation.mel_spectrogram(signal).squeeze(0)
+        return spectrogram, signal
 
 
     def _resample_if_necessary(self, signal, sr):

@@ -3,7 +3,7 @@ import torch
 ## General
 RUN_NAME = "Testing"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-TRAIN_DATA = '../dataset/youtube_clips'
+TRAIN_DATA = '../dataset/data'
 VALID_DATA = TRAIN_DATA
 NUM_WORKERS = 1
 
@@ -27,7 +27,7 @@ SAVE_SAMPLES_EVERY = 10000
 
 ## Univnet Specific
 # Training
-BATCH_SIZE = 16
+BATCH_SIZE = 2
 OPTIMIZER = 'adam'
 SEED = 2022
 CHECKPOINT_PATH = None

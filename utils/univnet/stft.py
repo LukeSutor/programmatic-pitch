@@ -55,8 +55,8 @@ class TacotronSTFT(torch.nn.Module):
         self.register_buffer('hann_window', hann_window)
 
     def linear_spectrogram(self, y):
-        assert (torch.min(y.data) >= -1)
-        assert (torch.max(y.data) <= 1)
+        # assert (torch.min(y.data) >= -1)
+        # assert (torch.max(y.data) <= 1)
 
         y = torch.nn.functional.pad(y.unsqueeze(1),
                                     (int((self.n_fft - self.hop_size) / 2), int((self.n_fft - self.hop_size) / 2)),
@@ -78,8 +78,9 @@ class TacotronSTFT(torch.nn.Module):
         -------
         mel_output: torch.FloatTensor of shape (B, n_mel_channels, T)
         """
-        assert(torch.min(y.data) >= -1)
-        assert(torch.max(y.data) <= 1)
+        # print("minimum:",torch.min(y.data))
+        # assert(torch.min(y.data) >= -1)
+        # assert(torch.max(y.data) <= 1)
 
         y = torch.nn.functional.pad(y.unsqueeze(1),
                                     (int((self.n_fft - self.hop_size) / 2), int((self.n_fft - self.hop_size) / 2)),

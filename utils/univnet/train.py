@@ -123,7 +123,6 @@ def train(rank, num_gpus):
             with torch.no_grad():
                 validate(model_g, model_d, valloader, stft, writer, step, device)
 
-        trainloader.dataset.shuffle_mapping()
         if rank == 0:
             loader = tqdm.tqdm(trainloader, desc='Loading train data')
         else:

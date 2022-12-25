@@ -5,7 +5,6 @@ import logging
 import argparse
 import torch
 import torch.multiprocessing as mp
-from omegaconf import OmegaConf
 
 sys.path.insert(0, '../')
 import constants

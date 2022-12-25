@@ -63,7 +63,6 @@ class KernelPredictor(torch.nn.Module):
         Args:
             c (Tensor): the conditioning sequence (batch, cond_channels, cond_length)
         '''
-        print(c.shape)
         batch, _, cond_length = c.shape
 
         c = self.input_conv(c)
@@ -184,7 +183,6 @@ class LVCBlock(torch.nn.Module):
         '''
         batch, _, in_length = x.shape
         batch, _, out_channels, kernel_size, kernel_length = kernel.shape
-        print(in_length, (kernel_length * hop_size))
         assert in_length == (kernel_length * hop_size), "length of (x, kernel) is not matched"
 
         padding = dilation * int((kernel_size - 1) / 2)
