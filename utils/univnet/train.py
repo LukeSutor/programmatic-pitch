@@ -9,7 +9,6 @@ import torch.nn.functional as F
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 import itertools
-from torchinfo import summary
 
 from .writer import MyWriter
 from .stft import TacotronSTFT

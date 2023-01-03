@@ -28,8 +28,6 @@ if __name__ == "__main__":
     for i, file in enumerate(os.listdir(DATA_FOLDER)):
         signal, sr = torchaudio.load(DATA_FOLDER + file)
 
-        signal
-
         # Resample to make all sample rates the same
         signal = resample_if_necessary(signal, sr)
 
@@ -37,12 +35,13 @@ if __name__ == "__main__":
         signal = mix_down_if_necessary(signal)
 
         # Save signal in train or valid folder
+        filename = "{:04.0f}".format(i) + ".wav"
         if(random.random() > 0.2):
             # Train split
-            torchaudio.save(TRAIN_FOLDER + file, signal, TARGET_SAMPLE_RATE)
+            torchaudio.save(TRAIN_FOLDER + filename, signal, TARGET_SAMPLE_RATE)
         else:
             # Valid split
-            torchaudio.save(VALID_FOLDER + file, signal, TARGET_SAMPLE_RATE)
+            torchaudio.save(VALID_FOLDER + filename, signal, TARGET_SAMPLE_RATE)
 
-        print("{:3.2f}% Complete".format(i / total_files))
+        print("{:5.2f}% Complete".format((i + 1) / total_files * 100))
 
