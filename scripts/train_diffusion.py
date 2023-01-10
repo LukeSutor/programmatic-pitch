@@ -10,23 +10,23 @@ from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, Traine
 if __name__ == "__main__":
 
     model = Unet(
-        dim = 16, # 256
-        dim_mults = (1, 2, 4, 8),
-        channels = 2
+        dim = constants.DIM, # 256
+        dim_mults = constants.DIM_MULTS,
+        channels = constants.CHANNELS
     )
 
     diffusion = GaussianDiffusion(
         denoise_fn = model,
         image_size = 128,
-        n_mels = 128,
-        n_samples = 1024, # 1024
-        channels = 2,
-        timesteps = 1000,   # number of steps
-        loss_type = 'l1'    # L1 or L2
+        n_mels = constants.NUM_CHANNELS,
+        n_samples = constants.TARGET_SAMPLES,
+        channels = constants.CHANNELS,
+        timesteps = constants.TIMESTEPS,   # number of steps
+        loss_type = constants.LOSS_TYPE    # L1 or L2
 
     )
 
-    # summary(diffusion, input_size=(constants.BATCH_SIZE, 2, 128, 512))
+    summary(diffusion, input_size=(constants.BATCH_SIZE, 1, 128, 1024))
 
 
     trainer = Trainer(

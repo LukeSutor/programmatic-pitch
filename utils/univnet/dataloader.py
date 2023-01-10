@@ -8,10 +8,12 @@ from torch.utils.data import DataLoader, Dataset
 import torchaudio
 import numpy as np
 import soundfile as sf
+from stft import TacotronSTFT
+# from .stft import TacotronSTFT
 #TESTING
 sys.path.insert(0, "../../")
 import constants
-from .stft import TacotronSTFT
+# sys.path.insert(0, "../../")
 
 
 def create_dataloader(train, device):
@@ -140,27 +142,8 @@ if __name__ == "__main__":
         f_max=constants.FMAX
     )
 
-    # GET MEL
-    stft = TacotronSTFT(constants.FILTER_LENGTH, constants.HOP_LENGTH, constants.WIN_LENGTH,
-                        constants.NUM_CHANNELS, constants.SAMPLE_RATE,
-                        constants.FMIN, constants.FMAX, center=False, device="cpu")
-    wavpath = "../../dataset/youtube_clips/'NOBODY'.wav"
-    melpath = wavpath.replace('.wav', '.mel')
-    sr, wav = read_wav_np(wavpath)
-
-    wav = torch.from_numpy(wav).unsqueeze(0)
-    mel = stft.mel_spectrogram(wav)
-
-    mel = mel.squeeze(0)
+    dataset = AudioDataset(_list_wav_files_recursively('../../dataset/data/valid'), constants.SAMPLE_RATE, constants.TARGET_SAMPLES, device="cuda")
+    
 
 
-    dataset = AudioDataset(
-        all_files,
-        constants.SAMPLE_RATE,
-        constants.TARGET_SAMPLES,
-        mel_spectrogram,
-        device="cuda"
-    )
-
-    print("MINE:",dataset[0][0].shape)
-    print("THEIRS:",mel.shape)
+    print("Shape:",dataset[0][0].shape) # torch.Size([128, 1024])

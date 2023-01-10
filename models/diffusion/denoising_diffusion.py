@@ -631,24 +631,36 @@ class Dataset(data.Dataset):
         # Get a random sequence from the data of length sr * audio_length
         audio_data = load_info(path)
         duration = audio_data["samples"]
-        sample_length = math.floor(512 * 1023 * audio_data["samplerate"] / self.target_sample_rate)
+        sample_length = math.floor(256 * 1024 * audio_data["samplerate"] / self.target_sample_rate)
         start = random.randint(0, duration - sample_length)
 
         signal, sr = torchaudio.load(path, num_frames = sample_length, frame_offset = start)
-        signal = signal.to("cpu")
+        # signal = signal.to(self.device)
 
         # Resample to make all sample rates the same
         signal = self._resample_if_necessary(signal, sr)
 
+        # Mix down the signal to mono
+        signal = self._mix_down_if_necessary(signal)
+
+        # Resampling and mixing down may cause floating point errors, so reclamp values
+        signal = signal.clamp(-1.0, 1.0)
+
         # Mel spectrogram transformation
-        signal = self.transformation(signal)
-        return signal
+        spectrogram = self.transformation.mel_spectrogram(signal).squeeze(0)
+        return spectrogram, signal
+
 
     def _resample_if_necessary(self, signal, sr):
         if sr != self.target_sample_rate:
             resampler = torchaudio.transforms.Resample(
-                sr, self.target_sample_rate).to("cpu")
+                sr, self.target_sample_rate)#.to(self.device)
             signal = resampler(signal)
+        return signal
+
+    def _mix_down_if_necessary(self, signal):
+        if signal.shape[0] > 1:
+            signal = torch.mean(signal, dim=0, keepdim=True)
         return signal
 
 

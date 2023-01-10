@@ -5,10 +5,15 @@ import logging
 import argparse
 import torch
 import torch.multiprocessing as mp
+import warnings
+
 
 sys.path.insert(0, '../')
 import constants
 from utils.univnet.train import train
+
+# Suppress warnings
+warnings.filterwarnings("ignore")
 
 torch.backends.cudnn.benchmark = True
 

@@ -6,9 +6,10 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRAIN_DATA = '../dataset/data/train'
 VALID_DATA = '../dataset/data/valid'
 NUM_WORKERS = 1
+USE_AMP = True
 
 ## Mel Transform
-NUM_CHANNELS = 128
+NUM_CHANNELS = 100
 SAMPLE_RATE = 16000
 TARGET_SAMPLES = 1024
 HOP_LENGTH = 256 # WARNING: this can't be changed.
@@ -20,10 +21,17 @@ FMIN = 0
 FMAX = 12000.0
 
 ## Diffusion Specific
+# Training
 BATCH_SIZE = 1
 GRADIENT_ACCUMULATION = 4
 TRAIN_STEPS = 100000
 SAVE_SAMPLES_EVERY = 10000
+# Model
+DIM = 64
+DIM_MULTS = (1, 2, 4, 8)
+CHANNELS = 1
+TIMESTEPS = 1000
+LOSS_TYPE = 'l1' # 'l1' or 'l2'
 
 ## Univnet Specific
 # Training
@@ -59,8 +67,8 @@ DIST_URL = "tcp://localhost:54321"
 WORLD_SIZE = 1
 #Log
 SUMMARY_INTERVAL = 1
-VALIDATION_INTERVAL = 100
-SAVE_INTERVAL = 100
+VALIDATION_INTERVAL = 1
+SAVE_INTERVAL = 1
 NUM_AUDIO = 5
 CHECKPOINT_DIR = 'chkpt'
 LOG_DIR = 'logs'
