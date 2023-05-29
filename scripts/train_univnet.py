@@ -27,7 +27,7 @@ if __name__ == '__main__':
     if torch.cuda.is_available():
         torch.cuda.manual_seed(constants.SEED)
         num_gpus = torch.cuda.device_count()
-        print('Batch size per GPU :', constants.BATCH_SIZE)
+        print(num_gpus, 'GPUs found. Batch size per GPU:', constants.BATCH_SIZE)
     else:
         pass
 

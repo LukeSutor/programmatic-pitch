@@ -9,11 +9,9 @@ import torchaudio
 import numpy as np
 import soundfile as sf
 from stft import TacotronSTFT
-# from .stft import TacotronSTFT
 #TESTING
 sys.path.insert(0, "../../")
 import constants
-# sys.path.insert(0, "../../")
 
 
 def create_dataloader(train, device):
@@ -71,7 +69,6 @@ class AudioDataset(Dataset):
         super().__init__()
         self.local_images = image_paths
         self.device = device
-        # self.transformation = transformation#.to(self.device)
         self.target_sample_rate = target_sample_rate
         self.target_samples = target_samples
         self.transformation = TacotronSTFT(filter_length=constants.FILTER_LENGTH,

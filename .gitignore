@@ -7,6 +7,7 @@ __pycache__/
 *.pt
 *.pth
 *.zip
+*.0
 data/
 
 chkpt/
