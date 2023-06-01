@@ -3,14 +3,14 @@ import torch
 ## General
 RUN_NAME = "Testing"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-TRAIN_DATA = '../dataset/data/train'
-VALID_DATA = '../dataset/data/valid'
+TRAIN_DATA = 'dataset/data'
+VALID_DATA = 'dataset/data/valid'
 NUM_WORKERS = 1
 USE_AMP = True
 
 ## Mel Transform
 NUM_CHANNELS = 100
-SAMPLE_RATE = 16000
+SAMPLE_RATE = 22050
 TARGET_SAMPLES = 1024
 HOP_LENGTH = 256 # WARNING: this can't be changed.
 FILTER_LENGTH = 1024

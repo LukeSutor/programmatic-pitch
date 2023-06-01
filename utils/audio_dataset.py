@@ -1,5 +1,6 @@
 import math
 import random
+import os
 
 import blobfile as bf
 # from mpi4py import MPI
@@ -61,7 +62,7 @@ def load_data(
     """
     if not data_dir:
         raise ValueError("unspecified data directory")
-    all_files = _list_wav_files_recursively(data_dir)
+    all_files = os.listdir(data_dir)
     classes = None
     if class_cond:
         # Assume classes are the first part of the filename,
@@ -86,18 +87,6 @@ def load_data(
         )
     while True:
         yield from loader
-
-
-def _list_wav_files_recursively(data_dir):
-    results = []
-    for entry in sorted(bf.listdir(data_dir)):
-        full_path = bf.join(data_dir, entry)
-        ext = entry.split(".")[-1]
-        if "." in entry and ext.lower() in ["wav"]:
-            results.append(full_path)
-        elif bf.isdir(full_path):
-            results.extend(_list_wav_files_recursively(full_path))
-    return results
 
 
 class AudioDataset(Dataset):
@@ -154,7 +143,7 @@ if __name__ == "__main__":
     SAMPLE_RATE = 16000
     TARGET_SAMPLES = 1024
 
-    all_files = _list_wav_files_recursively('C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/data')
+    all_files = os.path.join('D:/datasets/lofi')
 
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
