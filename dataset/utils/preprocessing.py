@@ -4,10 +4,10 @@ import os
 import torch
 import torchaudio
 
-DATA_FOLDER = '../youtube_clips/'
-TRAIN_FOLDER = '../data/train/'
-VALID_FOLDER = '../data/valid/'
-TARGET_SAMPLE_RATE = 16000
+DATA_FOLDER = "D:/datasets/lofi_dataset/beats"
+TRAIN_FOLDER = "D:/datasets/lofi_minimized/train"
+VALID_FOLDER = "D:/datasets/lofi_minimized/valid"
+TARGET_SAMPLE_RATE = 22050
 
 def resample_if_necessary(signal, sr):
     if sr != TARGET_SAMPLE_RATE:
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     total_files = len(os.listdir(DATA_FOLDER))
 
     for i, file in enumerate(os.listdir(DATA_FOLDER)):
-        signal, sr = torchaudio.load(DATA_FOLDER + file)
+        signal, sr = torchaudio.load(os.path.join(DATA_FOLDER, file))
 
         # Resample to make all sample rates the same
         signal = resample_if_necessary(signal, sr)
@@ -38,10 +38,10 @@ if __name__ == "__main__":
         filename = "{:04.0f}".format(i) + ".wav"
         if(random.random() > 0.2):
             # Train split
-            torchaudio.save(TRAIN_FOLDER + filename, signal, TARGET_SAMPLE_RATE)
+            torchaudio.save(os.path.join(TRAIN_FOLDER, filename), signal, TARGET_SAMPLE_RATE)
         else:
             # Valid split
-            torchaudio.save(VALID_FOLDER + filename, signal, TARGET_SAMPLE_RATE)
+            torchaudio.save(os.path.join(VALID_FOLDER, filename), signal, TARGET_SAMPLE_RATE)
 
         print("{:5.2f}% Complete".format((i + 1) / total_files * 100))
 

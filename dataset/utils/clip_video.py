@@ -2,8 +2,8 @@ import os
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
 
-DATA_DIR = "D:/datasets/crop"
-SAVE_DIR = "D:/datasets/cropped"
+DATA_DIR = "D:/datasets/crop_2"
+SAVE_DIR = "D:/datasets/cropped_2"
 
 
 def extract_subclip(filename, time, i):
@@ -20,30 +20,19 @@ def extract_subclip(filename, time, i):
 
 
 if __name__ == "__main__":
-    filename = "Distant Space 🌙 Deep Chill Beats"
+    filename = "Yasumu - Unravel🌷 [lofi hip hop⧸relaxing beats]"
 
     # "",
     times = [
-        "1:41-3:50",
-        "3:51-6:28",
-        "11:42-14:08",
-        "14:09-17:23",
-        "17:25-19:55",
-        "19:56-22:33",
-        "22:34-23:47",
-        "23:49-26:06",
-        "26:07-28:38",
-        "33:01-35:10",
-        "35:11-37:48",
-        "43:02-45:28",
-        "45:29-48:42",
-        "48:44-51:14",
-        "51:15-53:52",
-        "53:53-55:07",
-        "55:08-57:27",
-        "57:28-59:58",
-    ]
+        "0:00-2:08",
+        "2:09-4:14",
+        "4:15-6:24",
+        "6:25-8:41",
+        "8:42-11:32",
+        "11:33-13:52",
+        "13:55-16:08",
+        "16:10-18:28",
+        ]
 
     for i, time in enumerate(times):
         extract_subclip(filename, time, i)
-

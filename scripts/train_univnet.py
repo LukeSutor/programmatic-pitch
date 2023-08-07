@@ -7,8 +7,8 @@ import torch
 import torch.multiprocessing as mp
 import warnings
 
-
-sys.path.insert(0, '../')
+# Project-specific imports
+sys.path.insert(1, '.')
 import constants
 from utils.univnet.train import train
 

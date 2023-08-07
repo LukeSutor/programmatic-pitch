@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     diffusion = GaussianDiffusion(
         denoise_fn = model,
-        image_size = 128,
+        image_size = 512,
         n_mels = constants.NUM_CHANNELS,
         n_samples = constants.TARGET_SAMPLES,
         channels = constants.CHANNELS,
@@ -29,16 +29,16 @@ if __name__ == "__main__":
     summary(diffusion, input_size=(constants.BATCH_SIZE, 1, 128, 1024))
 
 
-    trainer = Trainer(
-        diffusion,
-        constants.TRAIN_DATA,
-        constants.SAMPLE_RATE,
-        constants.TARGET_SAMPLES,
-        constants.DEVICE,
-        train_batch_size = constants.BATCH_SIZE,
-        train_num_steps = constants.TRAIN_STEPS,
-        gradient_accumulate_every = constants.GRADIENT_ACCUMULATION,
-        save_and_sample_every = constants.SAVE_SAMPLES_EVERY
-    )
+    # trainer = Trainer(
+    #     diffusion,
+    #     constants.TRAIN_DATA,
+    #     constants.SAMPLE_RATE,
+    #     constants.TARGET_SAMPLES,
+    #     constants.DEVICE,
+    #     train_batch_size = constants.BATCH_SIZE,
+    #     train_num_steps = constants.TRAIN_STEPS,
+    #     gradient_accumulate_every = constants.GRADIENT_ACCUMULATION,
+    #     save_and_sample_every = constants.SAVE_SAMPLES_EVERY
+    # )
 
-    trainer.train()
+    # trainer.train()

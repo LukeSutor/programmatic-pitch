@@ -4,7 +4,7 @@ import torch
 RUN_NAME = "Testing"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRAIN_DATA = 'dataset/data'
-VALID_DATA = 'dataset/data/valid'
+VALID_DATA = 'dataset/data'
 NUM_WORKERS = 1
 USE_AMP = True
 
@@ -27,7 +27,7 @@ GRADIENT_ACCUMULATION = 4
 TRAIN_STEPS = 100000
 SAVE_SAMPLES_EVERY = 10000
 # Model
-DIM = 64
+DIM = 256
 DIM_MULTS = (1, 2, 4, 8)
 CHANNELS = 1
 TIMESTEPS = 1000

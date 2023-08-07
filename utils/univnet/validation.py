@@ -3,6 +3,9 @@ import tqdm
 import torch
 import torchaudio
 import torch.nn.functional as F
+
+# Project-specific imports
+sys.path.insert(1, ".")
 import constants
 
 def validate(generator, discriminator, valloader, stft, writer, step, device):

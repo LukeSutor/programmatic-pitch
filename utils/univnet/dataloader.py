@@ -1,21 +1,18 @@
 import sys
 import math
 import random
+from datetime import datetime
 
 import torch
-import time
 import os
 import librosa
 from pedalboard import Pedalboard, Reverb, PitchShift, Invert
 from torch.utils.data import DataLoader, Dataset
 import torchaudio
-import numpy as np
-import soundfile as sf
-from stft import TacotronSTFT
-import plotting
-#TESTING
-sys.path.insert(0, "../../")
-sys.path.insert(0, ".")
+
+# Project-specific imports
+sys.path.insert(1, ".")
+from utils.univnet.stft import TacotronSTFT
 import constants
 
 
@@ -78,13 +75,15 @@ class AudioDataset(Dataset):
                                             center=False,
                                             device="cpu")
         
+        # Seed random number generator
+        random.seed(datetime.now().timestamp())
+        
 
     def __len__(self):
         return len(self.local_images)
 
 
     def __getitem__(self, idx):
-        start_t = time.time()
         filename = self.local_images[idx]
 
         # Get a random sequence from the data of length sr * audio_length
@@ -116,8 +115,6 @@ class AudioDataset(Dataset):
 
         # Mel spectrogram transformation
         spectrogram = self.transformation.mel_spectrogram(signal).squeeze(0)
-        end_t = time.time()
-        print(end_t - start_t, "Seconds")
         return spectrogram, signal
 
 
@@ -143,10 +140,9 @@ class AudioDataset(Dataset):
             - Speed Change
             - Pitch Shift
             - Reverb
-            - EQ Clamping
+            - Inverse
         '''
         effects = [(1 if random.random() < 0.3 else 0) for _ in range(4)]
-        # effects = [0, 0, 0, 0]
 
         if effects.count(1) == 0:
             # Crop signal to correct size
@@ -191,10 +187,10 @@ if __name__ == "__main__":
 
     dataset = AudioDataset(constants.TRAIN_DATA, constants.SAMPLE_RATE, constants.TARGET_SAMPLES, True, device="cuda")
     
-    # print("Shape:", dataset[0][0].shape) # torch.Size([128, 1024])
+    # print("Shape:", dataset[0][0].shape) # torch.Size([100, 1024])
 
     
 
-    for i in range(len(dataset)):
-        spectrogram, signal = dataset[0]
-        torchaudio.save(f'test_{i}.wav', signal, constants.SAMPLE_RATE)
+    # for i in range(len(dataset)):
+    #     spectrogram, signal = dataset[0]
+    #     torchaudio.save(f'test_{i}.wav', signal, constants.SAMPLE_RATE)

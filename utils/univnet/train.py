@@ -15,18 +15,18 @@ from .stft import TacotronSTFT
 from .stft_loss import MultiResolutionSTFTLoss
 from .dataloader import create_dataloader
 
-sys.path.insert(0, "C:/Users/Luke/Desktop/coding/diffusion_music_generation/")
-
-import constants
+# Project-specific imports
+sys.path.insert(1, ".")
 from models.univnet.generator import Generator
 from models.univnet.discriminator import Discriminator
 from .utils import get_commit_hash
 from .validation import validate
+import constants
 
 
 def train(rank, num_gpus):
 
-    with open('../constants.py', 'r') as f:
+    with open('constants.py', 'r') as f:
         hyperparams = ''.join(f.readlines())
 
     if num_gpus > 1:
