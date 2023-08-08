@@ -37,7 +37,7 @@ LOSS_TYPE = 'l1' # 'l1' or 'l2'
 # Training
 BATCH_SIZE = 1
 OPTIMIZER = 'adam'
-SEED = 2022
+SEED = 2023
 CHECKPOINT_PATH = None
 # Adam
 LR = 0.0001
