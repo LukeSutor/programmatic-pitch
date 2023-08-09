@@ -48,6 +48,7 @@ def train(rank, num_gpus):
 
     init_epoch = -1
     step = 0
+    log_filename = ""
 
     # define logger, writer, valloader, stft at rank_zero
     if rank == 0:
@@ -56,11 +57,12 @@ def train(rank, num_gpus):
         os.makedirs(pt_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
 
+        log_filename = os.path.join(log_dir, '%s-%d.log' % (constants.RUN_NAME, time.time()))
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(os.path.join(log_dir, '%s-%d.log' % (constants.RUN_NAME, time.time()))),
+                logging.FileHandler(log_filename),
                 logging.StreamHandler()
             ]
         )
@@ -120,7 +122,7 @@ def train(rank, num_gpus):
         
         if rank == 0 and epoch % constants.VALIDATION_INTERVAL == 0:
             with torch.no_grad():
-                validate(model_g, model_d, valloader, stft, writer, step, device)
+                validate(model_g, model_d, valloader, stft, writer, step, device, log_filename)
 
         if rank == 0:
             loader = tqdm.tqdm(trainloader, desc='Loading train data')

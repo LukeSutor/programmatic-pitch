@@ -3,12 +3,13 @@ import tqdm
 import torch
 import torchaudio
 import torch.nn.functional as F
+import shutil
 
 # Project-specific imports
 sys.path.insert(1, ".")
 import constants
 
-def validate(generator, discriminator, valloader, stft, writer, step, device):
+def validate(generator, discriminator, valloader, stft, writer, step, device, log_filename):
     generator.eval()
     discriminator.eval()
     torch.backends.cudnn.benchmark = False
@@ -40,5 +41,8 @@ def validate(generator, discriminator, valloader, stft, writer, step, device):
     mel_loss = mel_loss / len(valloader.dataset)
 
     writer.log_validation(mel_loss, generator, discriminator, step)
+
+    # Create a copy of the tensorboard file to be downloaded
+    shutil.copyfile(log_filename, "events.out.tfevents.copy.0")
 
     torch.backends.cudnn.benchmark = True
