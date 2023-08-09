@@ -32,6 +32,6 @@ if __name__ == '__main__':
         pass
 
     if num_gpus > 1:
-        mp.spawn(train, num_gpus, nprocs=num_gpus)
+        mp.spawn(train, [num_gpus], nprocs=num_gpus)
     else:
         train(0, num_gpus)
