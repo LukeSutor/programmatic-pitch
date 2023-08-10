@@ -1,3 +1,4 @@
+import os
 import sys
 import tqdm
 import torch
@@ -9,7 +10,7 @@ import shutil
 sys.path.insert(1, ".")
 import constants
 
-def validate(generator, discriminator, valloader, stft, writer, step, device, log_filename):
+def validate(generator, discriminator, valloader, stft, writer, step, device, log_dir):
     generator.eval()
     discriminator.eval()
     torch.backends.cudnn.benchmark = False
@@ -43,6 +44,8 @@ def validate(generator, discriminator, valloader, stft, writer, step, device, lo
     writer.log_validation(mel_loss, generator, discriminator, step)
 
     # Create a copy of the tensorboard file to be downloaded
-    shutil.copyfile(log_filename, "events.out.tfevents.copy.0")
+    for file in os.listdir(log_dir):
+        if file.endswith(".0") and file.count("copy") == 0:
+            shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
 
     torch.backends.cudnn.benchmark = True
