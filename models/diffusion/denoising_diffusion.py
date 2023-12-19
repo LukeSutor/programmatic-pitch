@@ -37,14 +37,6 @@ def cycle(dl):
         for data in dl:
             yield data
 
-def num_to_groups(num, divisor):
-    groups = num // divisor
-    remainder = num % divisor
-    arr = [divisor] * groups
-    if remainder > 0:
-        arr.append(remainder)
-    return arr
-
 def normalize_to_neg_one_to_one(img):
     return img * 2 - 1
 
@@ -383,10 +375,9 @@ class GaussianDiffusion(nn.Module):
         self,
         denoise_fn,
         *,
-        image_size,
         n_mels,
         n_samples,
-        channels = 2,
+        channels = 1,
         timesteps = 1000,
         loss_type = 'l1',
         objective = 'pred_noise',
@@ -398,8 +389,9 @@ class GaussianDiffusion(nn.Module):
         assert not (type(self) == GaussianDiffusion and denoise_fn.channels != denoise_fn.out_dim)
 
         self.channels = channels
-        self.image_size = image_size
         self.denoise_fn = denoise_fn
+        self.n_mels = n_mels
+        self.n_samples = n_samples
         self.objective = objective
 
         if beta_schedule == 'linear':
@@ -505,10 +497,11 @@ class GaussianDiffusion(nn.Module):
         return img
 
     @torch.no_grad()
-    def sample(self, batch_size = 16):
-        image_size = self.image_size
+    def sample(self, batch_size = 1):
         channels = self.channels
-        return self.p_sample_loop((batch_size, channels, image_size, image_size))
+        n_mels = self.n_mels
+        n_samples = self.n_samples
+        return self.p_sample_loop((batch_size, channels, n_mels, n_samples))
 
     @torch.no_grad()
     def interpolate(self, x1, x2, t = None, lam = 0.5):
@@ -564,8 +557,7 @@ class GaussianDiffusion(nn.Module):
         return loss.mean()
 
     def forward(self, img, *args, **kwargs):
-        b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
-        # assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
+        b, c, h, w, device, = *img.shape, img.device
         t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
         img = normalize_to_neg_one_to_one(img)
@@ -772,10 +764,11 @@ class Trainer(object):
                     self.ema_model.eval()
 
                     milestone = self.step // self.save_and_sample_every
-                    batches = num_to_groups(36, self.batch_size)
-                    all_images_list = list(map(lambda n: self.ema_model.sample(batch_size=n), batches))
-                    all_images = torch.cat(all_images_list, dim=0)
-                    utils.save_image(all_images, str(self.results_folder / f'sample-{milestone}.png'), nrow = 6)
+
+                    for i in range(5):
+                            image_batch = self.ema_model.sample()
+                            torch.save(image_batch, f'image_{milestone}_{i}.pt')
+
                     self.save(milestone)
 
                 self.step += 1

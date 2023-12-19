@@ -17,7 +17,6 @@ if __name__ == "__main__":
 
     diffusion = GaussianDiffusion(
         denoise_fn = model,
-        image_size = 512,
         n_mels = constants.NUM_CHANNELS,
         n_samples = constants.TARGET_SAMPLES,
         channels = constants.CHANNELS,

@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     dataset = AudioDataset(constants.TRAIN_DATA, constants.SAMPLE_RATE, constants.TARGET_SAMPLES, True, device="cuda")
     
-    # print("Shape:", dataset[0][0].shape) # torch.Size([100, 1024])
+    print("Shape:", dataset[0][0].shape) # torch.Size([100, 1024])
 
     
 
