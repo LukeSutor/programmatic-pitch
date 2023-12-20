@@ -2,8 +2,10 @@ import sys
 import os
 import torch
 import torchaudio
-# Project-specific imports
-sys.path[0] += '/../'
+
+# Add root to path for imports
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR+'/../'))
 from models.univnet.generator import Generator
 import constants
 
@@ -35,6 +37,14 @@ def sample(model_path, output_path, mel):
     model_g.load_state_dict(checkpoint['model_g'])
 
     mel = mel.unsqueeze(0)
+    # pad tensor
+    desired_size = (1, 100, 1024)
+    old_size = mel.size()
+    new_size = torch.Size([desired_size[i] if i < len(old_size) else old_size[i] for i in range(len(desired_size))])
+    new_tensor = torch.zeros(new_size)
+    new_tensor[:old_size[0], :old_size[1], :old_size[2]] = mel
+    print(new_tensor.shape)
+    mel = new_tensor
     mel = mel .to(constants.DEVICE)
     noise = torch.randn(constants.BATCH_SIZE, constants.NOISE_DIM, mel.size(2)).to(constants.DEVICE)
 

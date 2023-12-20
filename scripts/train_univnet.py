@@ -7,10 +7,12 @@ import torch
 import torch.multiprocessing as mp
 import warnings
 
-# Project-specific imports
-sys.path.insert(1, '.')
+# Add root to path for imports
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR+'/../'))
 import constants
 from utils.univnet.train import train
+
 
 # Suppress warnings
 warnings.filterwarnings("ignore")

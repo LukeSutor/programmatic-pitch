@@ -13,10 +13,9 @@ import itertools
 from .writer import MyWriter
 from .stft import TacotronSTFT
 from .stft_loss import MultiResolutionSTFTLoss
-from .dataloader import create_dataloader
+from ..dataloader import create_dataloader
 
 # Project-specific imports
-sys.path.insert(1, ".")
 from models.univnet.generator import Generator
 from models.univnet.discriminator import Discriminator
 from .utils import get_commit_hash

@@ -2,7 +2,9 @@ import sys
 import torch
 from torchinfo import summary
 
-sys.path.insert(0, '../')
+# Add root to path for imports
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR+'/../'))
 import constants
 from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, Trainer
 
@@ -25,7 +27,7 @@ if __name__ == "__main__":
 
     )
 
-    summary(diffusion, input_size=(constants.BATCH_SIZE, 1, 96, 1024))
+    summary(diffusion, input_size=(constants.BATCH_SIZE, 1, constants.NUM_CHANNELS, constants.TARGET_SAMPLES))
 
 
     # trainer = Trainer(
