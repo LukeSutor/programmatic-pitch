@@ -23,7 +23,7 @@ def load_info(path: str) -> dict:
         raise RuntimeError("Deprecated backend is not supported")
 
     info = {}
-    si = torchaudio.info(str(path))
+    si = torchaudio.info(str(os.getcwd() +'../dataset/data/'+ path))
     info["samplerate"] = si.sample_rate
     info["samples"] = si.num_frames
     info["channels"] = si.num_channels
@@ -143,7 +143,8 @@ if __name__ == "__main__":
     SAMPLE_RATE = 16000
     TARGET_SAMPLES = 1024
 
-    all_files = os.path.join('D:/datasets/lofi')
+    all_files = os.listdir('../dataset/data')
+    #os.path.join('D:/datasets/lofi')
 
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     )
 
 
-    print(len(dataset))
+    print(dataset[2].shape)
     # torch.Size([2, 128, 1024])
 
     # data = np.array(dataset[2])

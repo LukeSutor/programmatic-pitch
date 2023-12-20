@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     )
 
-    summary(diffusion, input_size=(constants.BATCH_SIZE, 1, 128, 1024))
+    summary(diffusion, input_size=(constants.BATCH_SIZE, 1, 96, 1024))
 
 
     # trainer = Trainer(

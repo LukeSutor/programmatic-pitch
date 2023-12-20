@@ -11,7 +11,8 @@ from torch.utils.data import DataLoader, Dataset
 import torchaudio
 
 # Project-specific imports
-sys.path.insert(1, ".")
+sys.path[0] += "/../../"
+print(sys.path[0])
 from utils.univnet.stft import TacotronSTFT
 import constants
 
@@ -185,9 +186,11 @@ if __name__ == "__main__":
     # print(type(audio))
 
 
-    dataset = AudioDataset(constants.TRAIN_DATA, constants.SAMPLE_RATE, constants.TARGET_SAMPLES, True, device="cuda")
+    dataset = AudioDataset('C:/Users/Luke/Desktop/coding/diffusion_music_generation/dataset/data', constants.SAMPLE_RATE, constants.TARGET_SAMPLES, True, device="cuda")
     
     print("Shape:", dataset[0][0].shape) # torch.Size([100, 1024])
+
+    torch.save(dataset[0][0], '../../test.pt')
 
     
 

@@ -640,7 +640,7 @@ class Dataset(data.Dataset):
 
         # Mel spectrogram transformation
         spectrogram = self.transformation.mel_spectrogram(signal).squeeze(0)
-        return spectrogram, signal
+        return spectrogram#, signal
 
 
     def _resample_if_necessary(self, signal, sr):

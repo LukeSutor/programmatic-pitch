@@ -7,9 +7,10 @@ TRAIN_DATA = 'dataset/data'
 VALID_DATA = 'dataset/data'
 NUM_WORKERS = 1
 USE_AMP = True
+ROOT_DIR = 'C:/Users/Luke/Desktop/coding/diffusion_music_generation'
 
 ## Mel Transform
-NUM_CHANNELS = 128
+NUM_CHANNELS = 96
 SAMPLE_RATE = 22050
 TARGET_SAMPLES = 1024
 HOP_LENGTH = 256 # WARNING: this can't be changed.
