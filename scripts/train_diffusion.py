@@ -1,45 +1,26 @@
 import sys
+import os
 import torch
-from torchinfo import summary
+import torch.multiprocessing as mp
 
 # Add root to path for imports
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR+'/../'))
 import constants
-from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, Trainer
+from utils.diffusion.train import train
 
 
 if __name__ == "__main__":
+    num_gpus = 0
+    torch.manual_seed(constants.SEED)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(constants.SEED)
+        num_gpus = torch.cuda.device_count()
+        print(num_gpus, 'GPUs found. Batch size per GPU:', constants.BATCH_SIZE)
+    else:
+        pass
 
-    model = Unet(
-        dim = constants.DIM, # 256
-        dim_mults = constants.DIM_MULTS,
-        channels = constants.CHANNELS
-    )
-
-    diffusion = GaussianDiffusion(
-        denoise_fn = model,
-        n_mels = constants.NUM_CHANNELS,
-        n_samples = constants.TARGET_SAMPLES,
-        channels = constants.CHANNELS,
-        timesteps = constants.TIMESTEPS,   # number of steps
-        loss_type = constants.LOSS_TYPE    # L1 or L2
-
-    )
-
-    summary(diffusion, input_size=(constants.BATCH_SIZE, 1, constants.NUM_CHANNELS, constants.TARGET_SAMPLES))
-
-
-    # trainer = Trainer(
-    #     diffusion,
-    #     constants.TRAIN_DATA,
-    #     constants.SAMPLE_RATE,
-    #     constants.TARGET_SAMPLES,
-    #     constants.DEVICE,
-    #     train_batch_size = constants.BATCH_SIZE,
-    #     train_num_steps = constants.TRAIN_STEPS,
-    #     gradient_accumulate_every = constants.GRADIENT_ACCUMULATION,
-    #     save_and_sample_every = constants.SAVE_SAMPLES_EVERY
-    # )
-
-    # trainer.train()
+    if num_gpus > 1:
+        mp.spawn(train, [num_gpus], nprocs=num_gpus)
+    else:
+        train(0, num_gpus)

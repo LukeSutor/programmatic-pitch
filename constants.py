@@ -5,9 +5,9 @@ RUN_NAME = "Testing"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRAIN_DATA = 'dataset/data'
 VALID_DATA = 'dataset/data'
+CHKPT_DIR = 'chkpt'
 NUM_WORKERS = 1
 USE_AMP = True
-ROOT_DIR = 'C:/Users/Luke/Desktop/coding/diffusion_music_generation'
 
 ## Mel Transform
 NUM_CHANNELS = 96
@@ -26,20 +26,26 @@ FMAX = 12000.0
 BATCH_SIZE = 1
 GRADIENT_ACCUMULATION = 4
 TRAIN_STEPS = 100000
-SAVE_SAMPLES_EVERY = 10000
+SAVE_SAMPLES_EVERY = 2
+LEARNING_RATE = 1e-4
+DIFFUSION_CHECKPOINT_PATH = None
 # Model
-DIM = 256
+DIM = 32
 DIM_MULTS = (1, 2, 4, 8)
 CHANNELS = 1
 TIMESTEPS = 1000
 LOSS_TYPE = 'l1' # 'l1' or 'l2'
+#EMA
+EMA_DECAY = 0.995
+STEP_START_EMA = 2000
+UPDATE_EMA_EVERY = 10
 
 ## Univnet Specific
 # Training
 BATCH_SIZE = 1
 OPTIMIZER = 'adam'
 SEED = 2023
-CHECKPOINT_PATH = None
+UNIVNET_CHECKPOINT_PATH = None
 # Adam
 LR = 0.0001
 BETA1 = 0.5

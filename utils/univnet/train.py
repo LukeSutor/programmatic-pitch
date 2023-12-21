@@ -48,6 +48,8 @@ def train(rank, num_gpus):
     init_epoch = -1
     step = 0
     log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME)
+    chkpt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME, 'univnet')
+    os.makedirs(chkpt_dir, exist_ok=True)
 
     # define logger, writer, valloader, stft at rank_zero
     if rank == 0:
@@ -76,10 +78,10 @@ def train(rank, num_gpus):
                             center=False,
                             device=device)
 
-    if constants.CHECKPOINT_PATH is not None:
+    if constants.UNIVNET_CHECKPOINT_PATH is not None:
         if rank == 0:
-            logger.info("Resuming from checkpoint: %s" % constants.CHECKPOINT_PATH)
-        checkpoint = torch.load(constants.CHECKPOINT_PATH)
+            logger.info("Resuming from checkpoint: %s" % constants.UNIVNET_CHECKPOINT_PATH)
+        checkpoint = torch.load(constants.UNIVNET_CHECKPOINT_PATH)
         model_g.load_state_dict(checkpoint['model_g'])
         model_d.load_state_dict(checkpoint['model_d'])
         optim_g.load_state_dict(checkpoint['optim_g'])
@@ -180,8 +182,7 @@ def train(rank, num_gpus):
                 loader.set_description("g %.04f d %.04f | step %d" % (loss_g, loss_d, step))
 
         if rank == 0 and epoch % constants.SAVE_INTERVAL == 0:
-            save_path = os.path.join(pt_dir, '%s_%04d.pt'
-                                     % (constants.RUN_NAME, epoch))
+            save_path = os.path.join(chkpt_dir, '%04d.pt' % epoch)
             torch.save({
                 'model_g': (model_g.module if num_gpus > 1 else model_g).state_dict(),
                 'model_d': (model_d.module if num_gpus > 1 else model_d).state_dict(),
