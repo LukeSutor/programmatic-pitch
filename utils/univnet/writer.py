@@ -2,9 +2,9 @@ import sys
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import librosa
-import constants
 
-from .plotting import plot_waveform_to_numpy, plot_spectrogram_to_numpy
+import constants
+from ..plotting import plot_waveform_to_numpy, plot_spectrogram_to_numpy
 
 
 class MyWriter(SummaryWriter):

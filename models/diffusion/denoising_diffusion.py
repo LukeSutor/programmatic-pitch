@@ -714,7 +714,7 @@ class Trainer(object):
 
         self.reset_parameters()
 
-    def reset_parameters(self):
+    def reset_parameters(self): 
         self.ema_model.load_state_dict(self.model.state_dict())
 
     def step_ema(self):

@@ -6,6 +6,7 @@ from tqdm import tqdm
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 import itertools
+from .writer import MyWriter
 
 from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, EMA, Adam, GradScaler
 from utils.dataloader import create_dataloader
@@ -33,9 +34,6 @@ def train(rank, num_gpus):
     with open('constants.py', 'r') as f:
         hyperparams = ''.join(f.readlines())
 
-    chkpt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME, 'diffusion')
-    os.makedirs(chkpt_dir, exist_ok=True)
-
     device = torch.device('cuda:{:d}'.format(rank))
 
     # initialize models
@@ -54,14 +52,13 @@ def train(rank, num_gpus):
         loss_type = constants.LOSS_TYPE    # L1 or L2
     ).to(device)
 
-
     ema = EMA(constants.EMA_DECAY)
 
     ema_model = copy.deepcopy(diffusion)
 
     trainloader = create_dataloader(True, device='cpu')
 
-    opt = Adam(diffusion.parameters(), lr = constants.LEARNING_RATE)
+    opt = Adam(diffusion.parameters(), lr = constants.DIFFUSION_LR)
                
     reset_parameters(ema_model, diffusion)
     scaler = GradScaler(enabled = constants.USE_AMP)
@@ -70,6 +67,14 @@ def train(rank, num_gpus):
     # if not consistent, it'll horribly slow down.
     torch.backends.cudnn.benchmark = True
 
+    # Create directories and writer
+    log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME, 'diffusion')
+    chkpt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME, 'diffusion')
+
+    if rank == 0:
+        os.makedirs(log_dir, exist_ok=True)
+        os.makedirs(chkpt_dir, exist_ok=True)
+        writer = MyWriter(log_dir)
 
     if constants.DIFFUSION_CHECKPOINT_PATH is not None:
         if rank == 0:
@@ -83,6 +88,7 @@ def train(rank, num_gpus):
         if rank == 0 and hyperparams != checkpoint['hyperparams']:
             print("New hyperparams are different from checkpoint. Will use new.")
     else:
+        init_epoch = -1
         if rank == 0:
             print("Starting new training run.")
 
@@ -94,40 +100,43 @@ def train(rank, num_gpus):
     for epoch in itertools.count(init_epoch+1):
 
         if rank == 0:
-            loader = tqdm.tqdm(trainloader, desc='Loading train data')
+            loader = tqdm(trainloader, desc='Loading train data')
         else:
             loader = trainloader
 
         for mel, _ in loader:
-            mel = mel.to(device)
+            mel = mel.unsqueeze(0).to(device)
 
             with autocast(enabled = constants.USE_AMP):
                     loss = diffusion(mel)
                     scaler.scale(loss / constants.GRADIENT_ACCUMULATION).backward()
-            
-            if epoch == 0 or epoch % constants.GRADIENT_ACCUMULATION != 0:
-                continue
 
             if rank == 0:
                 loader.set_description(f'loss: {loss.item():.4f}')
 
-            scaler.step(opt)
-            scaler.update()
-            opt.zero_grad()
+                # Log training
+                if epoch % constants.SUMMARY_INTERVAL == 0:
+                    writer.log_training(loss.item(), epoch)
+
+            if epoch != 0 and epoch % constants.GRADIENT_ACCUMULATION == 0:
+                scaler.step(opt)
+                scaler.update()
+                opt.zero_grad()
 
             if epoch % constants.UPDATE_EMA_EVERY == 0:
                 step_ema(epoch, ema, ema_model, diffusion)
 
             # Sample model
-            if epoch != 0 and epoch % constants.SAVE_SAMPLES_EVERY == 0:
+            if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
                 ema_model.eval()
 
-                milestone = epoch // constants.SAVE_SAMPLES_EVERY
+                milestone = epoch // constants.SAMPLE_INTERVAL
 
-                for i in range(5):
+                for i in range(constants.SAMPLE_NUMBER):
                         image = ema_model.sample()
                         torch.save(image, f'mel_{milestone}_{i}.pt')
-            
+                        if rank == 0 and i == 0:
+                            writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), epoch)      
             # Save checkpoint
             if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
                 save_path = os.path.join(chkpt_dir, f'%04d.pt' % epoch)

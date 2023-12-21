@@ -1,13 +1,22 @@
 import torch
 
 ## General
-RUN_NAME = "Testing"
+RUN_NAME = "training_01"
+SEED = 2023
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 TRAIN_DATA = 'dataset/data'
 VALID_DATA = 'dataset/data'
-CHKPT_DIR = 'chkpt'
 NUM_WORKERS = 1
 USE_AMP = True
+
+## Logging
+CHECKPOINT_DIR = 'chkpt'
+LOG_DIR = 'logs'
+SAMPLE_INTERVAL = 10
+SAMPLE_NUMBER = 1
+SUMMARY_INTERVAL = 1
+VALIDATION_INTERVAL = 1
+SAVE_INTERVAL = 1
 
 ## Mel Transform
 NUM_CHANNELS = 96
@@ -25,10 +34,8 @@ FMAX = 12000.0
 # Training
 BATCH_SIZE = 1
 GRADIENT_ACCUMULATION = 4
-TRAIN_STEPS = 100000
-SAVE_SAMPLES_EVERY = 2
-LEARNING_RATE = 1e-4
-DIFFUSION_CHECKPOINT_PATH = None
+DIFFUSION_LR = 1e-4
+DIFFUSION_CHECKPOINT_PATH = 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/chkpt/training_01/diffusion/0002.pt'
 # Model
 DIM = 32
 DIM_MULTS = (1, 2, 4, 8)
@@ -44,17 +51,15 @@ UPDATE_EMA_EVERY = 10
 # Training
 BATCH_SIZE = 1
 OPTIMIZER = 'adam'
-SEED = 2023
 UNIVNET_CHECKPOINT_PATH = None
 # Adam
-LR = 0.0001
+UNIVNET_LR = 0.0001
 BETA1 = 0.5
 BETA2 = 0.9
 STFT_LAMB = 2.5
 #Generator
 NOISE_DIM = 64
 CHANNEL_SIZE = 16
-CHANNEL_COUNT = 100
 DILATIONS = [1, 3, 9, 27]
 STRIDES = [8, 8, 4]
 GEN_LRELU_SLOPE = 0.2
@@ -73,11 +78,3 @@ MRD_LRELU_SLOPE = 0.2
 DIST_BACKEND = "nccl"
 DIST_URL = "tcp://localhost:54321"
 WORLD_SIZE = 1
-#Log
-SUMMARY_INTERVAL = 1
-VALIDATION_INTERVAL = 1
-SAVE_INTERVAL = 1
-NUM_AUDIO = 5
-CHECKPOINT_DIR = 'chkpt'
-LOG_DIR = 'logs'
-

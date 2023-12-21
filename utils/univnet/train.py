@@ -39,17 +39,16 @@ def train(rank, num_gpus):
     model_d = Discriminator().to(device)
 
     optim_g = torch.optim.AdamW(model_g.parameters(),
-        lr=constants.LR, betas=(constants.BETA1, constants.BETA2))
+        lr=constants.UNIVNET_LR, betas=(constants.BETA1, constants.BETA2))
     optim_d = torch.optim.AdamW(model_d.parameters(),
-        lr=constants.LR, betas=(constants.BETA1, constants.BETA2))
+        lr=constants.UNIVNET_LR, betas=(constants.BETA1, constants.BETA2))
 
     githash = get_commit_hash()
 
     init_epoch = -1
     step = 0
-    log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME)
+    log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME, 'univnet')
     chkpt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME, 'univnet')
-    os.makedirs(chkpt_dir, exist_ok=True)
 
     # define logger, writer, valloader, stft at rank_zero
     if rank == 0:

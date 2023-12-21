@@ -11,8 +11,6 @@ from torch.utils.data import DataLoader, Dataset
 import torchaudio
 
 # Project-specific imports
-sys.path[0] += "/../"
-print(sys.path[0])
 from utils.univnet.stft import TacotronSTFT
 import constants
 

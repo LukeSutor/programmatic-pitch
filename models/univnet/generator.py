@@ -12,7 +12,7 @@ class Generator(nn.Module):
     """UnivNet Generator"""
     def __init__(self):
         super(Generator, self).__init__()
-        self.mel_channel = constants.CHANNEL_COUNT
+        self.mel_channel = constants.NUM_CHANNELS
         self.noise_dim = constants.NOISE_DIM
         self.hop_length = constants.HOP_LENGTH
         channel_size = constants.CHANNEL_SIZE
@@ -25,7 +25,7 @@ class Generator(nn.Module):
             self.res_stack.append(
                 LVCBlock(
                     channel_size,
-                    constants.CHANNEL_COUNT,
+                    constants.NUM_CHANNELS,
                     stride=stride,
                     dilations=constants.DILATIONS,
                     lReLU_slope=constants.GEN_LRELU_SLOPE,

@@ -29,7 +29,7 @@ def validate(generator, discriminator, valloader, stft, writer, step, device, lo
 
         mel_loss += F.l1_loss(mel_fake, mel_real).item()
 
-        if idx < constants.NUM_AUDIO:
+        if idx < constants.SAMPLE_NUMBER:
             spec_fake = stft.linear_spectrogram(fake_audio.squeeze(1))
             spec_real = stft.linear_spectrogram(audio.squeeze(1))
 
