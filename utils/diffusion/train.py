@@ -1,5 +1,6 @@
 import os
 import copy
+import shutil
 import torch
 from torch.cuda.amp import autocast
 from tqdm import tqdm
@@ -147,3 +148,8 @@ def train(rank, num_gpus):
                     'scaler': scaler.state_dict(),
                     'hyperparams': hyperparams,
                 }, save_path)
+
+                # Create a copy of the tensorboard file to be downloaded
+                for file in os.listdir(log_dir):
+                    if file.endswith(".0") and file.count("copy") == 0:
+                        shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))

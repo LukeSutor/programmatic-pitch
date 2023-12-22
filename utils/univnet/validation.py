@@ -43,9 +43,4 @@ def validate(generator, discriminator, valloader, stft, writer, step, device, lo
 
     writer.log_validation(mel_loss, generator, discriminator, step)
 
-    # Create a copy of the tensorboard file to be downloaded
-    for file in os.listdir(log_dir):
-        if file.endswith(".0") and file.count("copy") == 0:
-            shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
-
     torch.backends.cudnn.benchmark = True

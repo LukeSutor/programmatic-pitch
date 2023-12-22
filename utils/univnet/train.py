@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import shutil
 import logging
 import tqdm
 import torch
@@ -185,3 +186,8 @@ def train(rank, num_gpus):
                 'hyperparams': hyperparams,
             }, save_path)
             logger.info("Saved checkpoint to: %s" % save_path)
+
+            # Create a copy of the tensorboard file to be downloaded
+            for file in os.listdir(log_dir):
+                if file.endswith(".0") and file.count("copy") == 0:
+                    shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
