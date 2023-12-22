@@ -50,8 +50,7 @@ def train(rank, num_gpus):
 
     # define logger, writer, valloader, stft at rank_zero
     if rank == 0:
-        pt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME)
-        os.makedirs(pt_dir, exist_ok=True)
+        os.makedirs(chkpt_dir, exist_ok=True)
         os.makedirs(log_dir, exist_ok=True)
 
         logging.basicConfig(
@@ -188,6 +187,7 @@ def train(rank, num_gpus):
             logger.info("Saved checkpoint to: %s" % save_path)
 
             # Create a copy of the tensorboard file to be downloaded
-            for file in os.listdir(log_dir):
-                if file.endswith(".0") and file.count("copy") == 0:
-                    shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
+            if constants.DUPLICATE_TENSORBOARD:
+                for file in os.listdir(log_dir):
+                    if file.endswith(".0") and file.count("copy") == 0:
+                        shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))

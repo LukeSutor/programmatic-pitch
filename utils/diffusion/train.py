@@ -82,6 +82,7 @@ def train(rank, num_gpus):
             print("Resuming from checkpoint: %s" % constants.DIFFUSION_CHECKPOINT_PATH)
         checkpoint = torch.load(constants.DIFFUSION_CHECKPOINT_PATH)
         init_epoch = checkpoint['epoch']
+        step = checkpoint['step']
         diffusion.load_state_dict(checkpoint['model'])
         ema_model.load_state_dict(checkpoint['ema'])
         scaler.load_state_dict(checkpoint['scaler'])
@@ -90,6 +91,7 @@ def train(rank, num_gpus):
             print("New hyperparams are different from checkpoint. Will use new.")
     else:
         init_epoch = -1
+        step = 0
         if rank == 0:
             print("Starting new training run.")
 
@@ -117,7 +119,7 @@ def train(rank, num_gpus):
 
                 # Log training
                 if epoch % constants.SUMMARY_INTERVAL == 0:
-                    writer.log_training(loss.item(), epoch)
+                    writer.log_training(loss.item(), step)
 
             if epoch != 0 and epoch % constants.GRADIENT_ACCUMULATION == 0:
                 scaler.step(opt)
@@ -137,12 +139,13 @@ def train(rank, num_gpus):
                         image = ema_model.sample()
                         torch.save(image, f'mel_{milestone}_{i}.pt')
                         if rank == 0 and i == 0:
-                            writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), epoch)      
+                            writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
             # Save checkpoint
             if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
                 save_path = os.path.join(chkpt_dir, f'%04d.pt' % epoch)
                 torch.save({
                     'epoch': epoch,
+                    'step': step,
                     'model': diffusion.state_dict(),
                     'ema': ema_model.state_dict(),
                     'scaler': scaler.state_dict(),
@@ -150,6 +153,7 @@ def train(rank, num_gpus):
                 }, save_path)
 
                 # Create a copy of the tensorboard file to be downloaded
-                for file in os.listdir(log_dir):
-                    if file.endswith(".0") and file.count("copy") == 0:
-                        shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
+                if constants.DUPLICATE_TENSORBOARD:
+                    for file in os.listdir(log_dir):
+                        if file.endswith(".0") and file.count("copy") == 0:
+                            shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
