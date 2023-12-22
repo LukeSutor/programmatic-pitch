@@ -118,7 +118,7 @@ def train(rank, num_gpus):
                 loader.set_description(f'loss: {loss.item():.4f}')
 
                 # Log training
-                if epoch % constants.SUMMARY_INTERVAL == 0:
+                if step % constants.SUMMARY_INTERVAL == 0:
                     writer.log_training(loss.item(), step)
 
             if epoch != 0 and epoch % constants.GRADIENT_ACCUMULATION == 0:
