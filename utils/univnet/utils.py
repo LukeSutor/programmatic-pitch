@@ -1,13 +1,5 @@
-import random
-import subprocess
 import numpy as np
-import torchaudio
 from scipy.io.wavfile import read
-
-
-def get_commit_hash():
-    message = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-    return message.strip().decode('utf-8')
 
 def read_wav_np(path):
     sr, wav = read(path)

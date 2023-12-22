@@ -18,7 +18,6 @@ from ..dataloader import create_dataloader
 # Project-specific imports
 from models.univnet.generator import Generator
 from models.univnet.discriminator import Discriminator
-from .utils import get_commit_hash
 from .validation import validate
 import constants
 
@@ -42,8 +41,6 @@ def train(rank, num_gpus):
         lr=constants.UNIVNET_LR, betas=(constants.BETA1, constants.BETA2))
     optim_d = torch.optim.AdamW(model_d.parameters(),
         lr=constants.UNIVNET_LR, betas=(constants.BETA1, constants.BETA2))
-
-    githash = get_commit_hash()
 
     init_epoch = -1
     step = 0
@@ -91,10 +88,6 @@ def train(rank, num_gpus):
         if rank == 0:
             if hyperparams != checkpoint['hyperparams']:
                 logger.warning("New hyperparams are different from checkpoint. Will use new.")
-
-            if githash != checkpoint['githash']:
-                logger.warning("Code might be different: git hash is different.")
-                logger.warning("%s -> %s" % (checkpoint['githash'], githash))
 
     else:
         if rank == 0:
@@ -190,6 +183,5 @@ def train(rank, num_gpus):
                 'step': step,
                 'epoch': epoch,
                 'hyperparams': hyperparams,
-                'githash': githash,
             }, save_path)
             logger.info("Saved checkpoint to: %s" % save_path)
