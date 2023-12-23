@@ -2,14 +2,15 @@ import os
 import copy
 import shutil
 import torch
-from torch.cuda.amp import autocast
+from torch.optim import Adam
+from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 import itertools
 from .writer import MyWriter
 
-from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, EMA, Adam, GradScaler
+from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, EMA
 from utils.dataloader import create_dataloader
 import constants
 
@@ -34,6 +35,10 @@ def train(rank, num_gpus):
 
     with open('constants.py', 'r') as f:
         hyperparams = ''.join(f.readlines())
+
+    if num_gpus > 1:
+        init_process_group(backend=constants.DIST_BACKEND, init_method=constants.DIST_URL,
+                           world_size=constants.WORLD_SIZE * num_gpus, rank=rank)
 
     device = torch.device('cuda:{:d}'.format(rank))
 

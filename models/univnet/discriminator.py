@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import constants
 
 from .mpd import MultiPeriodDiscriminator
 from .mrd import MultiResolutionDiscriminator

@@ -36,7 +36,7 @@ FMAX = 12000.0
 BATCH_SIZE = 1
 GRADIENT_ACCUMULATION = 4
 DIFFUSION_LR = 1e-4
-DIFFUSION_CHECKPOINT_PATH = 'C:/Users/Luke/Desktop/coding/diffusion_music_generation/chkpt/training_01/diffusion/0002.pt'
+DIFFUSION_CHECKPOINT_PATH = None
 # Model
 DIM = 32
 DIM_MULTS = (1, 2, 4, 8)
@@ -65,6 +65,7 @@ DILATIONS = [1, 3, 9, 27]
 STRIDES = [8, 8, 4]
 GEN_LRELU_SLOPE = 0.2
 KPNET_CONV_SIZE = 3
+MAX_WAV_VALUE = 32768.0
 #mpd
 PERIODS = [2,3,5,7,11]
 KERNEL_SIZE = 5

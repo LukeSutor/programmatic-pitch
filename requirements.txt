@@ -1,0 +1,11 @@
+python==3.9.18
+torch==2.1.2+cu118
+torchaudio==2.1.2+cu118
+torchvision==0.16.2+cu118
+torchaudio==2.1.2
+tqdm==4.66.1
+einops==0.7.0
+tensorboard==2.15.1
+pedalboard==0.8.7
+librosa==0.10.1
+matplotlib==3.8.2

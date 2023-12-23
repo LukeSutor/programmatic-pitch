@@ -1,12 +1,9 @@
-import sys
 import torch
 import torch.nn as nn
-
 from .lvcnet import LVCBlock
 
 import constants
 
-MAX_WAV_VALUE = 32768.0
 
 class Generator(nn.Module):
     """UnivNet Generator"""
@@ -90,8 +87,8 @@ class Generator(nn.Module):
         audio = self.forward(mel, z)
         audio = audio.squeeze() # collapse all dimension except time axis
         audio = audio[:-(self.hop_length*10)]
-        audio = MAX_WAV_VALUE * audio
-        audio = audio.clamp(min=-MAX_WAV_VALUE, max=MAX_WAV_VALUE-1)
+        audio = constants.MAX_WAV_VALUE * audio
+        audio = audio.clamp(min=-constants.MAX_WAV_VALUE, max=constants.MAX_WAV_VALUE-1)
         audio = audio.short()
 
         return audio

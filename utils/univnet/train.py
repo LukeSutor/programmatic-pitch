@@ -1,12 +1,9 @@
 import os
-import sys
 import time
 import shutil
 import logging
 import tqdm
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.distributed import init_process_group
 from torch.nn.parallel import DistributedDataParallel
 import itertools

@@ -1,4 +1,3 @@
-import sys
 import math
 import random
 from datetime import datetime
@@ -36,9 +35,6 @@ def load_info(path: str, filename: str) -> dict:
         `samplerate`, `samples` and `duration` in seconds
     """
     # get length of file in samples
-    if torchaudio.get_audio_backend() == "sox":
-        raise RuntimeError("Deprecated backend is not supported")
-
     info = {}
     si = torchaudio.info(os.path.join(path, filename))
     info["samplerate"] = si.sample_rate

@@ -1,16 +1,14 @@
-import os
 import sys
 import tqdm
 import torch
-import torchaudio
 import torch.nn.functional as F
-import shutil
 
 # Project-specific imports
 sys.path.insert(1, ".")
 import constants
 
 def validate(generator, discriminator, valloader, stft, writer, step, device, log_dir):
+    #TODO: remove logdir from this function
     generator.eval()
     discriminator.eval()
     torch.backends.cudnn.benchmark = False
