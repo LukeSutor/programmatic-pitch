@@ -76,6 +76,7 @@ def train(rank, num_gpus):
     # Create directories and writer
     log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME, 'diffusion')
     chkpt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME, 'diffusion')
+    results_dir = os.path.join(constants.RESULTS_DIR, constants.RUN_NAME, 'diffusion')
 
     if rank == 0:
         os.makedirs(log_dir, exist_ok=True)
@@ -140,11 +141,9 @@ def train(rank, num_gpus):
         if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
             ema_model.eval()
 
-            milestone = epoch // constants.SAMPLE_INTERVAL
-
             for i in range(constants.SAMPLE_NUMBER):
                     image = ema_model.sample()
-                    torch.save(image, f'mel_{milestone}_{i}.pt')
+                    torch.save(image, os.path.join(results_dir, f'mel_{step}_{i}.pt'))
                     if rank == 0 and i == 0:
                         writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
 

@@ -12,6 +12,7 @@ USE_AMP = True
 ## Logging
 CHECKPOINT_DIR = 'chkpt'
 LOG_DIR = 'logs'
+RESULTS_DIR = 'results'
 SAMPLE_INTERVAL = 10
 SAMPLE_NUMBER = 1
 SUMMARY_INTERVAL = 1
