@@ -131,34 +131,37 @@ def train(rank, num_gpus):
                 scaler.update()
                 opt.zero_grad()
 
-            if epoch % constants.UPDATE_EMA_EVERY == 0:
-                step_ema(epoch, ema, ema_model, diffusion)
+            if step % constants.UPDATE_EMA_EVERY == 0:
+                step_ema(step, ema, ema_model, diffusion)
+            
+            step += 1
 
-            # Sample model
-            if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
-                ema_model.eval()
+        # Sample model
+        if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
+            ema_model.eval()
 
-                milestone = epoch // constants.SAMPLE_INTERVAL
+            milestone = epoch // constants.SAMPLE_INTERVAL
 
-                for i in range(constants.SAMPLE_NUMBER):
-                        image = ema_model.sample()
-                        torch.save(image, f'mel_{milestone}_{i}.pt')
-                        if rank == 0 and i == 0:
-                            writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
-            # Save checkpoint
-            if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
-                save_path = os.path.join(chkpt_dir, f'%04d.pt' % epoch)
-                torch.save({
-                    'epoch': epoch,
-                    'step': step,
-                    'model': diffusion.state_dict(),
-                    'ema': ema_model.state_dict(),
-                    'scaler': scaler.state_dict(),
-                    'hyperparams': hyperparams,
-                }, save_path)
+            for i in range(constants.SAMPLE_NUMBER):
+                    image = ema_model.sample()
+                    torch.save(image, f'mel_{milestone}_{i}.pt')
+                    if rank == 0 and i == 0:
+                        writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
 
-                # Create a copy of the tensorboard file to be downloaded
-                if constants.DUPLICATE_TENSORBOARD:
-                    for file in os.listdir(log_dir):
-                        if file.endswith(".0") and file.count("copy") == 0:
-                            shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
+        # Save checkpoint
+        if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
+            save_path = os.path.join(chkpt_dir, f'%04d.pt' % epoch)
+            torch.save({
+                'epoch': epoch,
+                'step': step,
+                'model': diffusion.state_dict(),
+                'ema': ema_model.state_dict(),
+                'scaler': scaler.state_dict(),
+                'hyperparams': hyperparams,
+            }, save_path)
+
+            # Create a copy of the tensorboard file to be downloaded
+            if constants.DUPLICATE_TENSORBOARD:
+                for file in os.listdir(log_dir):
+                    if file.endswith(".0") and file.count("copy") == 0:
+                        shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))

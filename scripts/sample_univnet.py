@@ -48,4 +48,4 @@ def sample(model_path, output_path, mel):
 if __name__ == "__main__":
     mel = get_mel(path=os.getcwd()+'/../test.pt')
 
-    sample(os.getcwd()+'/weights/univnet_final.pt', 'sample.wav', mel)
+    sample(os.getcwd()+'/weights/0600.pt', 'mel_1_1.wav', mel)
