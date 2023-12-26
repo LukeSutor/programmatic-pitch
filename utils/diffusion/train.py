@@ -81,6 +81,7 @@ def train(rank, num_gpus):
     if rank == 0:
         os.makedirs(log_dir, exist_ok=True)
         os.makedirs(chkpt_dir, exist_ok=True)
+        os.makedirs(results_dir, exist_ok=True)
         writer = MyWriter(log_dir)
 
     if constants.DIFFUSION_CHECKPOINT_PATH is not None:
