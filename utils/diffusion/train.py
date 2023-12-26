@@ -128,7 +128,7 @@ def train(rank, num_gpus):
                 if step % constants.SUMMARY_INTERVAL == 0:
                     writer.log_training(loss.item(), step)
 
-            if epoch != 0 and epoch % constants.GRADIENT_ACCUMULATION == 0:
+            if step != 0 and step % constants.GRADIENT_ACCUMULATION == 0:
                 scaler.step(opt)
                 scaler.update()
                 opt.zero_grad()

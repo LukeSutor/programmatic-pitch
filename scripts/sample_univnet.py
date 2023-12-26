@@ -36,8 +36,8 @@ def sample(model_path, output_path, mel):
     checkpoint = torch.load(model_path, map_location=constants.DEVICE)
     model_g.load_state_dict(checkpoint['model_g'])
 
-    mel = mel.unsqueeze(0)
-    mel = mel .to(constants.DEVICE)
+    mel = mel.squeeze(0)
+    mel = mel.to(constants.DEVICE)
     noise = torch.randn(constants.BATCH_SIZE, constants.NOISE_DIM, mel.size(2)).to(constants.DEVICE)
 
     with torch.no_grad():
@@ -46,6 +46,6 @@ def sample(model_path, output_path, mel):
     torchaudio.save(output_path, audio.cpu(), constants.SAMPLE_RATE)
 
 if __name__ == "__main__":
-    mel = get_mel(path=os.getcwd()+'/../test.pt')
+    mel = get_mel(path='results/mel_112220_0.pt')
 
-    sample(os.getcwd()+'/weights/0600.pt', 'mel_1_1.wav', mel)
+    sample(os.getcwd()+'/weights/0600.pt', 'results/sample_3 .wav', mel)
