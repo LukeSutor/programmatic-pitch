@@ -30,7 +30,6 @@ def sample(model_path, output_path, mel):
         input_path (str): path to input mel spectrogram
         output_path (str): path to save generated waveform
     '''
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model_g = Generator().to(constants.DEVICE)
 
     checkpoint = torch.load(model_path, map_location=constants.DEVICE)
@@ -46,6 +45,6 @@ def sample(model_path, output_path, mel):
     torchaudio.save(output_path, audio.cpu(), constants.SAMPLE_RATE)
 
 if __name__ == "__main__":
-    mel = get_mel(path='results/mel_112220_0.pt')
+    mel = get_mel(path='results/mel_47060_0.pt')
 
-    sample(os.getcwd()+'/weights/0600.pt', 'results/sample_3 .wav', mel)
+    sample(os.getcwd()+'/weights/0600.pt', 'results/sample_3.wav', mel)

@@ -115,7 +115,7 @@ def train(rank, num_gpus):
             loader = trainloader
 
         for mel, _ in loader:
-            mel = mel.unsqueeze(0).to(device)
+            mel = mel.unsqueeze(1).to(device)
 
             with autocast(enabled = constants.USE_AMP):
                     loss = diffusion(mel)
@@ -144,9 +144,10 @@ def train(rank, num_gpus):
 
             for i in range(constants.SAMPLE_NUMBER):
                     image = ema_model.sample()
-                    torch.save(image, os.path.join(results_dir, f'mel_{step}_{i}.pt'))
                     if rank == 0 and i == 0:
+                        os.makedirs(os.path.join(results_dir, f'{step}'), exist_ok=True)
                         writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
+                    torch.save(image, os.path.join(results_dir, f'mel_{step}_{i}.pt'))
 
         # Save checkpoint
         if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:

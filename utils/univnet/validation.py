@@ -7,8 +7,7 @@ import torch.nn.functional as F
 sys.path.insert(1, ".")
 import constants
 
-def validate(generator, discriminator, valloader, stft, writer, step, device, log_dir):
-    #TODO: remove logdir from this function
+def validate(generator, discriminator, valloader, stft, writer, step, device):
     generator.eval()
     discriminator.eval()
     torch.backends.cudnn.benchmark = False

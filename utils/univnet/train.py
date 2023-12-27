@@ -110,7 +110,7 @@ def train(rank, num_gpus):
         
         if rank == 0 and epoch % constants.VALIDATION_INTERVAL == 0:
             with torch.no_grad():
-                validate(model_g, model_d, valloader, stft, writer, step, device, log_dir)
+                validate(model_g, model_d, valloader, stft, writer, step, device)
 
         if rank == 0:
             loader = tqdm.tqdm(trainloader, desc='Loading train data')
