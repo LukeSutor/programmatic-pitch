@@ -142,12 +142,14 @@ def train(rank, num_gpus):
         if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
             ema_model.eval()
 
+            milestone = epoch // (constants.SAMPLE_INTERVAL * len(trainloader))
+
             for i in range(constants.SAMPLE_NUMBER):
                     image = ema_model.sample()
                     if rank == 0 and i == 0:
-                        os.makedirs(os.path.join(results_dir, f'{step}'), exist_ok=True)
+                        os.makedirs(os.path.join(results_dir, f'{milestone}'), exist_ok=True)
                         writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
-                    torch.save(image, os.path.join(results_dir, f'mel_{step}_{i}.pt'))
+                    torch.save(image, os.path.join(results_dir, f'mel_{milestone}_{i}.pt'))
 
         # Save checkpoint
         if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
