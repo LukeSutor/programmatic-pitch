@@ -12,14 +12,9 @@ from .writer import MyWriter
 
 from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, EMA
 from utils.dataloader import create_dataloader
+from utils.diffusion.validation import validate
 import constants
 
-
-
-def cycle(dl):
-    while True:
-        for data in dl:
-            yield data
 
 def reset_parameters(ema_model, model):
     ema_model.load_state_dict(model.state_dict())
@@ -63,6 +58,7 @@ def train(rank, num_gpus):
     ema_model = copy.deepcopy(diffusion)
 
     trainloader = create_dataloader(True, device='cpu')
+    valloader = create_dataloader(False, device='cpu')
 
     opt = Adam(diffusion.parameters(), lr = constants.DIFFUSION_LR)
                
@@ -138,12 +134,16 @@ def train(rank, num_gpus):
             
             step += 1
 
+        # Validate model
+        if rank == 0 and epoch % constants.VALIDATION_INTERVAL == 0:
+            with torch.no_grad():
+                validate(ema_model, valloader, writer, step, device)
+
         # Sample model
         if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
             ema_model.eval()
 
             milestone = epoch // constants.SAMPLE_INTERVAL
-            print("Epoch:", epoch, "Step:", step,  "Milestone:", milestone, "Sample interval:", constants.SAMPLE_INTERVAL, "Dataset size:", len(trainloader.dataset), "Batch size:", constants.BATCH_SIZE)
 
             for i in range(constants.SAMPLE_NUMBER):
                     image = ema_model.sample()

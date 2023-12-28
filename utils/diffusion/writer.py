@@ -10,7 +10,10 @@ class MyWriter(SummaryWriter):
         super(MyWriter, self).__init__(logdir)
 
     def log_training(self, loss, step):
-        self.add_scalar('loss', loss, step)
+        self.add_scalar('train/loss', loss, step)
+
+    def log_validation(self, loss, step):
+        self.add_scalar('val/loss', loss, step)
         
     def log_mel_spec(self, mel, step):
         mel = librosa.amplitude_to_db(mel, ref=np.max,top_db=80.)
