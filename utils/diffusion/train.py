@@ -149,7 +149,7 @@ def train(rank, num_gpus):
                     if rank == 0 and i == 0:
                         os.makedirs(os.path.join(results_dir, f'{milestone}'), exist_ok=True)
                         writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
-                    torch.save(image, os.path.join(results_dir, f'mel_{milestone}_{i}.pt'))
+                    torch.save(image, os.path.join(results_dir, milestone, f'mel_{milestone}_{i}.pt'))
 
         # Save checkpoint
         if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
