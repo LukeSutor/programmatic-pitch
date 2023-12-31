@@ -134,38 +134,39 @@ def train(rank, num_gpus):
             
             step += 1
 
-        # Validate model
-        if rank == 0 and epoch % constants.VALIDATION_INTERVAL == 0:
-            with torch.no_grad():
-                validate(ema_model, valloader, writer, step, device)
+        if rank == 0:
+            # Validate model
+            if epoch != 0 and epoch % constants.VALIDATION_INTERVAL == 0:
+                with torch.no_grad():
+                    validate(ema_model, valloader, writer, step, device)
 
-        # Sample model
-        if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
-            ema_model.eval()
+            # Sample model
+            if epoch != 0 and epoch % constants.SAMPLE_INTERVAL == 0:
+                ema_model.eval()
 
-            milestone = epoch // constants.SAMPLE_INTERVAL
+                milestone = epoch // constants.SAMPLE_INTERVAL
 
-            for i in range(constants.SAMPLE_NUMBER):
-                    image = ema_model.sample()
-                    if rank == 0 and i == 0:
-                        os.makedirs(os.path.join(results_dir, str(milestone)), exist_ok=True)
-                        writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
-                    torch.save(image, os.path.join(results_dir, str(milestone), f'mel_{i}.pt'))
+                for i in range(constants.SAMPLE_NUMBER):
+                        image = ema_model.sample()
+                        if rank == 0 and i == 0:
+                            os.makedirs(os.path.join(results_dir, str(milestone)), exist_ok=True)
+                            writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
+                        torch.save(image, os.path.join(results_dir, str(milestone), f'mel_{i}.pt'))
 
-        # Save checkpoint
-        if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
-            save_path = os.path.join(chkpt_dir, f'%04d.pt' % epoch)
-            torch.save({
-                'epoch': epoch,
-                'step': step,
-                'model': diffusion.state_dict(),
-                'ema': ema_model.state_dict(),
-                'scaler': scaler.state_dict(),
-                'hyperparams': hyperparams,
-            }, save_path)
+            # Save checkpoint
+            if epoch != 0 and epoch % constants.SAVE_INTERVAL == 0:
+                save_path = os.path.join(chkpt_dir, f'%04d.pt' % epoch)
+                torch.save({
+                    'epoch': epoch,
+                    'step': step,
+                    'model': diffusion.state_dict(),
+                    'ema': ema_model.state_dict(),
+                    'scaler': scaler.state_dict(),
+                    'hyperparams': hyperparams,
+                }, save_path)
 
-            # Create a copy of the tensorboard file to be downloaded
-            if constants.DUPLICATE_TENSORBOARD:
-                for file in os.listdir(log_dir):
-                    if file.endswith(".0") and file.count("copy") == 0:
-                        shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))
+                # Create a copy of the tensorboard file to be downloaded
+                if constants.DUPLICATE_TENSORBOARD:
+                    for file in os.listdir(log_dir):
+                        if file.endswith(".0") and file.count("copy") == 0:
+                            shutil.copyfile(os.path.join(log_dir, file), os.path.join(log_dir, "events.out.tfevents.copy.0"))

@@ -45,6 +45,6 @@ def sample(model_path, output_path, mel):
     torchaudio.save(output_path, audio.cpu(), constants.SAMPLE_RATE)
 
 if __name__ == "__main__":
-    mel = get_mel(path='results/mel_47060_0.pt')
+    mel = get_mel(path='results/mel_1.pt')
 
-    sample(os.getcwd()+'/weights/0600.pt', 'results/sample_3.wav', mel)
+    sample(os.getcwd()+'/weights/0600.pt', 'results/sample_91.wav', mel)
