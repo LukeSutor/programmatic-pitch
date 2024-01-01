@@ -10,7 +10,8 @@ from torch.nn.parallel import DistributedDataParallel
 import itertools
 from .writer import MyWriter
 
-from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion, EMA
+from models.diffusion.denoising_diffusion import Unet, GaussianDiffusion
+from models.diffusion.EMA import EMA
 from utils.dataloader import create_dataloader
 from utils.diffusion.validation import validate
 import constants
@@ -39,18 +40,16 @@ def train(rank, num_gpus):
 
     # initialize models
     model = Unet(
-        dim = constants.DIM, # 256
+        dim = constants.DIM,
         dim_mults = constants.DIM_MULTS,
         channels = constants.CHANNELS
     )
 
     diffusion = GaussianDiffusion(
-        denoise_fn = model,
-        n_mels = constants.NUM_CHANNELS,
-        n_samples = constants.TARGET_SAMPLES,
-        channels = constants.CHANNELS,
+        model,
+        image_size = (constants.NUM_CHANNELS, constants.TARGET_SAMPLES),
         timesteps = constants.TIMESTEPS,   # number of steps
-        loss_type = constants.LOSS_TYPE    # L1 or L2
+        sampling_timesteps=4
     ).to(device)
 
     ema = EMA(constants.EMA_DECAY)
@@ -147,7 +146,7 @@ def train(rank, num_gpus):
                 milestone = epoch // constants.SAMPLE_INTERVAL
 
                 for i in range(constants.SAMPLE_NUMBER):
-                        image = ema_model.sample()
+                        image = ema_model.sample(batch_size=1)
                         if rank == 0 and i == 0:
                             os.makedirs(os.path.join(results_dir, str(milestone)), exist_ok=True)
                             writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
