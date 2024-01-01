@@ -9,3 +9,5 @@ tensorboard==2.15.1
 pedalboard==0.8.7
 librosa==0.10.1
 matplotlib==3.8.2
+accelerate==0.25.0
+ema-pytorch==0.3.1
