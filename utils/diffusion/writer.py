@@ -12,6 +12,9 @@ class MyWriter(SummaryWriter):
     def log_training(self, loss, step):
         self.add_scalar('train/loss', loss, step)
 
+    def log_epoch(self, loss, epoch):
+        self.add_scalar('train/epoch_loss', loss, epoch)
+
     def log_validation(self, loss, step):
         self.add_scalar('val/loss', loss, step)
         

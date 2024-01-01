@@ -3,10 +3,8 @@ import copy
 import shutil
 import torch
 from torch.optim import Adam
-from torch.cuda.amp import autocast, GradScaler
+from accelerate import Accelerator
 from tqdm import tqdm
-from torch.distributed import init_process_group
-from torch.nn.parallel import DistributedDataParallel
 import itertools
 from .writer import MyWriter
 
@@ -27,16 +25,15 @@ def step_ema(step, ema, ema_model, model):
     ema.update_model_average(ema_model, model)
 
 
-def train(rank, num_gpus):
+def train():
 
     with open('constants.py', 'r') as f:
         hyperparams = ''.join(f.readlines())
 
-    if num_gpus > 1:
-        init_process_group(backend=constants.DIST_BACKEND, init_method=constants.DIST_URL,
-                           world_size=constants.WORLD_SIZE * num_gpus, rank=rank)
-
-    device = torch.device('cuda:{:d}'.format(rank))
+    accelerator = Accelerator(
+        mixed_precision = 'fp16' if constants.USE_AMP else 'no',
+    )
+    device = accelerator.device
 
     # initialize models
     model = Unet(
@@ -61,50 +58,45 @@ def train(rank, num_gpus):
 
     opt = Adam(diffusion.parameters(), lr = constants.DIFFUSION_LR)
                
-    reset_parameters(ema_model, diffusion)
-    scaler = GradScaler(enabled = constants.USE_AMP)
+    diffusion, opt, trainloader = accelerator.prepare(diffusion, opt, trainloader)
 
-    # this accelerates training when the size of minibatch is always consistent.
-    # if not consistent, it'll horribly slow down.
-    torch.backends.cudnn.benchmark = True
+    reset_parameters(ema_model, diffusion)
 
     # Create directories and writer
     log_dir = os.path.join(constants.LOG_DIR, constants.RUN_NAME, 'diffusion')
     chkpt_dir = os.path.join(constants.CHECKPOINT_DIR, constants.RUN_NAME, 'diffusion')
     results_dir = os.path.join(constants.RESULTS_DIR, constants.RUN_NAME, 'diffusion')
 
-    if rank == 0:
+    if accelerator.is_local_main_process:
         os.makedirs(log_dir, exist_ok=True)
         os.makedirs(chkpt_dir, exist_ok=True)
         os.makedirs(results_dir, exist_ok=True)
         writer = MyWriter(log_dir)
 
     if constants.DIFFUSION_CHECKPOINT_PATH is not None:
-        if rank == 0:
-            print("Resuming from checkpoint: %s" % constants.DIFFUSION_CHECKPOINT_PATH)
+        accelerator.print("Resuming from checkpoint: %s" % constants.DIFFUSION_CHECKPOINT_PATH)
         checkpoint = torch.load(constants.DIFFUSION_CHECKPOINT_PATH)
         init_epoch = checkpoint['epoch']
         step = checkpoint['step']
         diffusion.load_state_dict(checkpoint['model'])
         ema_model.load_state_dict(checkpoint['ema'])
-        scaler.load_state_dict(checkpoint['scaler'])
+        if accelerator.scaler is not None and checkpoint['scaler'] is not None:
+            accelerator.scaler.load_state_dict(checkpoint['scaler'])
 
-        if rank == 0 and hyperparams != checkpoint['hyperparams']:
-            print("New hyperparams are different from checkpoint. Will use new.")
+        if hyperparams != checkpoint['hyperparams']:
+            accelerator.print("New hyperparams are different from checkpoint. Will use new.")
     else:
         init_epoch = -1
         step = 0
-        if rank == 0:
-            print("Starting new training run.")
-
-    if num_gpus > 1:
-        diffusion = DistributedDataParallel(diffusion, device_ids=[rank]).to(device)
+        accelerator.print("Starting new training run.")
 
     diffusion.train()
 
     for epoch in itertools.count(init_epoch+1):
 
-        if rank == 0:
+        total_loss = 0.0
+
+        if accelerator.is_local_main_process:
             loader = tqdm(trainloader, desc='Loading train data')
         else:
             loader = trainloader
@@ -112,20 +104,24 @@ def train(rank, num_gpus):
         for mel, _ in loader:
             mel = mel.unsqueeze(1).to(device)
 
-            with autocast(enabled = constants.USE_AMP):
-                    loss = diffusion(mel)
-                    scaler.scale(loss / constants.GRADIENT_ACCUMULATION).backward()
+            with accelerator.autocast():
+                loss = diffusion(mel)
+                loss = loss / constants.GRADIENT_ACCUMULATION
+                total_loss += loss.item()
 
-            if rank == 0:
-                loader.set_description(f'loss: {loss.item():.4f}')
+            accelerator.backward(loss)
 
-                # Log training
-                if step % constants.SUMMARY_INTERVAL == 0:
-                    writer.log_training(loss.item(), step)
+            loader.set_description(f'loss: {loss.item():.4f}')
+
+            # Log training
+            if step % constants.SUMMARY_INTERVAL == 0:
+                writer.log_training(loss.item(), step)
+
+            accelerator.wait_for_everyone()
+            # accelerator.clip_grad_norm_(diffusion.parameters(), 1.0)
 
             if step != 0 and step % constants.GRADIENT_ACCUMULATION == 0:
-                scaler.step(opt)
-                scaler.update()
+                opt.step()
                 opt.zero_grad()
 
             if step % constants.UPDATE_EMA_EVERY == 0:
@@ -133,7 +129,11 @@ def train(rank, num_gpus):
             
             step += 1
 
-        if rank == 0:
+        if accelerator.is_local_main_process:
+            # Log epoch loss
+            total_loss /= len(trainloader.dataset)
+            writer.log_epoch(total_loss, epoch)
+
             # Validate model
             if epoch != 0 and epoch % constants.VALIDATION_INTERVAL == 0:
                 with torch.no_grad():
@@ -147,7 +147,7 @@ def train(rank, num_gpus):
 
                 for i in range(constants.SAMPLE_NUMBER):
                         image = ema_model.sample(batch_size=1)
-                        if rank == 0 and i == 0:
+                        if i == 0:
                             os.makedirs(os.path.join(results_dir, str(milestone)), exist_ok=True)
                             writer.log_mel_spec(image.squeeze(0).squeeze(0).cpu().detach().numpy(), step)      
                         torch.save(image, os.path.join(results_dir, str(milestone), f'mel_{i}.pt'))
@@ -160,7 +160,7 @@ def train(rank, num_gpus):
                     'step': step,
                     'model': diffusion.state_dict(),
                     'ema': ema_model.state_dict(),
-                    'scaler': scaler.state_dict(),
+                    'scaler': accelerator.scaler.state_dict() if accelerator.scaler is not None else None,
                     'hyperparams': hyperparams,
                 }, save_path)
 
