@@ -36,7 +36,7 @@ def train():
         model,
         image_size = (constants.NUM_CHANNELS, constants.TARGET_SAMPLES),
         timesteps = constants.TIMESTEPS,   # number of steps
-        sampling_timesteps=4
+        objective = 'pred_noise',
     ).to(device)
 
     trainloader = create_dataloader(True, device='cpu')
@@ -107,9 +107,10 @@ def train():
             accelerator.wait_for_everyone()
 
             if step != 0 and step % constants.GRADIENT_ACCUMULATION == 0:
+                accelerator.clip_grad_norm_(diffusion.parameters(), 1.0)
                 opt.step()
                 opt.zero_grad()
-            
+                
             step += 1
 
             if accelerator.is_local_main_process:

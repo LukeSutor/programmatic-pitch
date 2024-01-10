@@ -444,7 +444,7 @@ class GaussianDiffusion(nn.Module):
         beta_schedule = 'sigmoid',
         schedule_fn_kwargs = dict(),
         ddim_sampling_eta = 0.,
-        auto_normalize = True,
+        auto_normalize = False,
         offset_noise_strength = 0.,  # https://www.crosslabs.org/blog/diffusion-with-offset-noise
         min_snr_loss_weight = False, # https://arxiv.org/abs/2303.09556
         min_snr_gamma = 5
